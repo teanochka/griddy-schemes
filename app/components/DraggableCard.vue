@@ -19,9 +19,11 @@
   >
 
     <div class="w-full h-full p-2 flex items-center justify-center relative">
-      <input type="text" class="text-gray-700 text-sm w-fit" v-model="card.content" />
-
-      <!-- Ресайз-хендл (правый нижний угол) -->
+      <input 
+      ref="contentInput"
+      type="text" 
+      class="text-gray-700 text-sm w-fit" 
+      v-model="card.content" />
       <div
         @mousedown.stop="startResize"
         class="absolute bottom-[-15px] right-[-15px] w-8 h-8 cursor-se-resize bg-black"
@@ -100,15 +102,16 @@ function startResize(e) {
   window.addEventListener('mouseup', onResizeMouseUp)
 }
 
-// Двойной клик для редактирования
 const handleDoubleClick = () => {
-  const newContent = prompt('Введите новый текст:', props.card.content)
-  if (newContent !== null) {
-    props.card.content = newContent
+    if (cardRef.value) {
+      const input = cardRef.value.querySelector('input')
+      if (input) {
+        input.focus()
+        input.select()
+      }
   }
 }
 
-// Показ/скрытие контролов при наведении
 onMounted(() => {
   cardRef.value.addEventListener('mouseenter', () => {
     showControls.value = true
