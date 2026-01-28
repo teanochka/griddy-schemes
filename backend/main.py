@@ -6,6 +6,7 @@ from typing import List
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import aiofiles 
 
@@ -187,3 +188,31 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         manager.disconnect(websocket, project_id)
         await manager.broadcast({"user": user_nickname, "type": "disconnect"}, project_id, websocket)
+
+@app.post("/token")
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+    access_token = auth.create_access_token({"sub": user.email})
+
+    response = JSONResponse({
+        "user_id": user.id,
+        "nickname": user.nickname,
+        "email": user.email
+    })
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=60 * 60 * 5
+    )
+
+    return response
