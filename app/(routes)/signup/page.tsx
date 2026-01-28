@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '../../composables/useAuth'
 
 export default function SignUp() {
@@ -120,13 +121,13 @@ export default function SignUp() {
             </div>
 
             <div className="mb-6">
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full px-4 py-2 font-bold text-white bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-50"
+                className="w-full"
               >
                 {loading ? 'Registering...' : 'Register Account'}
-              </button>
+              </Button>
             </div>
 
             <hr className="mb-4" />

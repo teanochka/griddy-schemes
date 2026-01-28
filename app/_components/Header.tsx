@@ -1,4 +1,6 @@
+import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
 import React from 'react'
 
 function Header() {
@@ -39,26 +41,20 @@ function Header() {
 
       <div className="flex items-center gap-4">
         <div className="sm:flex sm:gap-4">
-          <div
-            className="block rounded-md  px-5 py-2.5 text-sm font-medium 
-            text-white transition "
-           
-          >Login
-          </div>
+          <Link href="/login">
+            <Button variant="ghost" className="text-white hover:text-gray-100">
+              Login
+            </Button>
+          </Link>
 
-          <div
-            className="hidden rounded-md bg-gray-100 
-            px-5 py-2.5 text-sm font-medium
-             text-black transition
-              hover:text-slate-800 sm:block"
-           
-          >Register 
-          </div>
+          <Link href="/signup">
+            <Button variant="outline" className="hidden sm:inline-flex">
+              Register
+            </Button>
+          </Link>
         </div>
 
-        <button
-          className="block rounded bg-gray-100 p-2.5 text-gray-600 transition hover:text-gray-600/75 md:hidden"
-        >
+        <Button>
           <span className="sr-only">Toggle menu</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +66,7 @@ function Header() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-        </button>
+        </Button>
       </div>
     </div>
   </div>

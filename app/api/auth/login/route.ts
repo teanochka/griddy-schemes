@@ -18,14 +18,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: response.status })
     }
 
-    // Установить cookie на клиенте
     const res = NextResponse.json(data)
     if (data.access_token) {
       res.cookies.set('access_token', data.access_token, {
         httpOnly: false,
         secure: false,
         sameSite: 'lax',
-        maxAge: 60 * 60 * 5, // 5 часов
+        maxAge: 60 * 60 * 5,
       })
     }
 
