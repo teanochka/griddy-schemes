@@ -34,6 +34,10 @@ app.add_middleware(
 STORAGE_DIR = "storage"
 os.makedirs(STORAGE_DIR, exist_ok=True)
 
+@app.get("/auth/me", response_model=schemas.UserDisplay)
+def get_current_user_info(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user
+
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()

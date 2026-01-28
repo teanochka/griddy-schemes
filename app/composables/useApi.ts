@@ -3,10 +3,8 @@ type ApiOptions = Omit<RequestInit, 'body'> & {
 }
 
 export const useApi = () => {
-  const baseUrl = 'http://127.0.0.1:8000'
-
   const authFetch = async (url: string, options: ApiOptions = {}) => {
-    const res = await fetch(`${baseUrl}${url}`, {
+    const res = await fetch(url, {
       method: options.method ?? 'GET',
       credentials: 'include',
       headers: {
@@ -17,14 +15,15 @@ export const useApi = () => {
     })
 
     if (!res.ok) {
-      throw new Error(await res.text())
+      const error = await res.text()
+      throw new Error(error)
     }
 
     return res.json()
   }
 
   const createProject = (title: string) =>
-    authFetch('/projects', {
+    authFetch('/api/projects', {
       method: 'POST',
       body: {
         title,
@@ -33,10 +32,10 @@ export const useApi = () => {
     })
 
   const getProjects = () =>
-    authFetch('/projects')
+    authFetch('/api/projects')
 
   const inviteUser = (projectId: number, emailOrNick: string) =>
-    authFetch(`/projects/${projectId}/invite`, {
+    authFetch(`/api/projects/${projectId}/invite`, {
       method: 'POST',
       body: {
         email_or_nickname: emailOrNick,

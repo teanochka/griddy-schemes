@@ -1,12 +1,37 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 export const useAuth = () => {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState<{
+    user_id: number
+    nickname: string
+    email: string
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Загружаем пользователя один раз при инициализации
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        if (!res.ok) {
+          setUser(null)
+          return
+        }
+        const data = await res.json()
+        setUser(data)
+      } catch (err) {
+        console.error('Failed to fetch user:', err)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUser()
+  }, [])
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -21,7 +46,6 @@ export const useAuth = () => {
           body: form,
           credentials: 'include',
         })
-
         if (!res.ok) return false
 
         const data = await res.json()
@@ -45,10 +69,7 @@ export const useAuth = () => {
           body: JSON.stringify({ email, nickname, password }),
           credentials: 'include',
         })
-
         if (!res.ok) return false
-
-        // сразу логинимся → cookie установится
         return await login(email, password)
       } finally {
         setLoading(false)
@@ -58,6 +79,7 @@ export const useAuth = () => {
   )
 
   const logout = useCallback(async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     setUser(null)
     router.push('/login')
   }, [router])
