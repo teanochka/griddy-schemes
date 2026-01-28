@@ -2,21 +2,20 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '../../composables/useAuth'
 
 export default function SignUp() {
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const [nickname, setNickname] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const { register, loading } = useAuth()
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
 
-    if (!firstName.trim()) newErrors.firstName = 'First name is required'
-    if (!lastName.trim()) newErrors.lastName = 'Last name is required'
+    if (!nickname.trim()) newErrors.nickname = 'Nickname is required'
     if (!email.trim()) newErrors.email = 'Email is required'
     if (!password) newErrors.password = 'Password is required'
     if (password.length < 6) newErrors.password = 'Password must be at least 6 characters'
@@ -31,32 +30,8 @@ export default function SignUp() {
 
     if (!validateForm()) return
 
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password,
-        }),
-      })
-
-      if (response.ok) {
-        window.location.href = '/dashboard'
-      } else {
-        const data = await response.json()
-        setErrors({ submit: data.message || 'Registration failed' })
-      }
-    } catch (error) {
-      console.error('Registration error:', error)
-      setErrors({ submit: 'An error occurred during registration' })
-    } finally {
-      setIsLoading(false)
-    }
+    const ok = await register(email, nickname, password)
+    if (!ok) setErrors({ submit: 'Registration failed' })
   }
 
   return (
@@ -79,37 +54,20 @@ export default function SignUp() {
               </div>
             )}
 
-            <div className="flex gap-4 mb-4">
-              <div className="flex-1">
-                <label className="block text-gray-700 text-sm font-bold mb-2">First Name</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First Name"
-                  className={`w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline ${
-                    errors.firstName ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {errors.firstName && (
-                  <p className="text-xs italic text-red-500 mt-1">{errors.firstName}</p>
-                )}
-              </div>
-              <div className="flex-1">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Last Name</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last Name"
-                  className={`w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline ${
-                    errors.lastName ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {errors.lastName && (
-                  <p className="text-xs italic text-red-500 mt-1">{errors.lastName}</p>
-                )}
-              </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Nickname</label>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="Your Nickname"
+                className={`w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline ${
+                  errors.nickname ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.nickname && (
+                <p className="text-xs italic text-red-500 mt-1">{errors.nickname}</p>
+              )}
             </div>
 
             <div className="mb-4">
@@ -164,10 +122,10 @@ export default function SignUp() {
             <div className="mb-6">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="w-full px-4 py-2 font-bold text-white bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-50"
               >
-                {isLoading ? 'Registering...' : 'Register Account'}
+                {loading ? 'Registering...' : 'Register Account'}
               </button>
             </div>
 

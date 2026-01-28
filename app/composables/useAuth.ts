@@ -1,45 +1,100 @@
+'use client'
+
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
 export const useAuth = () => {
-    const token = useCookie('auth_token')
-    const user = useState('auth_user', () => null)
+  const router = useRouter()
+  const [user, setUser] = useState<{ id: number; nickname?: string; email?: string } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('auth_token')
+  })
 
-    const login = async (email, password) => {
-        const formData = new FormData()
-        formData.append('username', email)
-        formData.append('password', password)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = localStorage.getItem('auth_user')
+    if (stored) setUser(JSON.parse(stored))
+  }, [])
 
-        try {
-            const data = await $fetch('/api/token', {
-                method: 'POST',
-                body: formData
-            })
-            token.value = data.access_token
-            user.value = { id: data.user_id, nickname: data.nickname }
-            return true
-        } catch (e) {
-            console.error(e)
-            return false
-        }
-    }
-
-const register = async (email, nickname, password) => {
+  const login = useCallback(async (email: string, password: string) => {
+    setLoading(true)
     try {
-        await $fetch('/api/register', {
-            method: 'POST',
-            body: { email, nickname, password }
-        })
-        return { success: true, error: null }
-    } catch (e: any) {
-        console.error("Ошибка регистрации:", e)
-        const msg = e.response?._data?.detail || e.message || "Неизвестная ошибка"
-        return { success: false, error: msg }
-    }
-}
+      const form = new URLSearchParams()
+      form.append('username', email)
+      form.append('password', password)
 
-    const logout = () => {
-        token.value = null
-        user.value = null
-        navigateTo('/login')
-    }
+      const response = await fetch('http://127.0.0.1:8000/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      })
 
-    return { token, user, login, register, logout }
+      if (response.ok) {
+        const data = await response.json()
+        const accessToken = data.access_token
+        localStorage.setItem('auth_token', accessToken)
+        setToken(accessToken)
+        const u = { id: data.user_id, nickname: data.nickname, email }
+        localStorage.setItem('auth_user', JSON.stringify(u))
+        setUser(u)
+        router.push('/dashboard')
+        return true
+      }
+      return false
+    } catch (e) {
+      console.error('Login error', e)
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [router])
+
+  const register = useCallback(async (email: string, nickname: string, password: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('http://127.0.0.1:8000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, nickname, password }),
+      })
+      if (response.ok) {
+        // Auto-login after successful registration
+        await login(email, password)
+        return true
+      }
+      const data = await response.json().catch(() => ({}))
+      console.error('Register failed', data)
+      return false
+    } catch (e) {
+      console.error('Register error', e)
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [login])
+
+  const logout = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+    }
+    setToken(null)
+    setUser(null)
+    router.push('/login')
+  }, [router])
+
+  const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    const t = token || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null)
+    const baseUrl = 'http://127.0.0.1:8000'
+    const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`
+    const headers = {
+      ...(options.headers || {}),
+      ...(t ? { Authorization: `Bearer ${t}` } : {}),
+    }
+    return fetch(fullUrl, { ...options, headers })
+  }, [token])
+
+  return { user, token, login, register, logout, loading, authFetch }
 }

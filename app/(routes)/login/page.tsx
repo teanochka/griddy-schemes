@@ -2,31 +2,16 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '../../composables/useAuth'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const { login, loading } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      
-      if (response.ok) {
-        window.location.href = '/dashboard'
-      }
-    } catch (error) {
-      console.error('Login error:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    await login(email, password)
   }
 
   const handleGoogleSignIn = () => {
@@ -111,10 +96,10 @@ export default function Login() {
             <div className="mt-8">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="bg-gray-700 text-white font-bold py-2 px-4 w-full rounded hover:bg-gray-600 disabled:opacity-50"
               >
-                {isLoading ? 'Logging in...' : 'Login'}
+                {loading ? 'Logging in...' : 'Login'}
               </button>
             </div>
           </form>
