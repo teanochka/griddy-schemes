@@ -1,60 +1,159 @@
-<script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
-
-const email = ref('')
-const nickname = ref('') 
-const password = ref('')
-const errorMsg = ref('')
-
-const { register, login } = useAuth()
-const router = useRouter()
-
-const handleRegister = async () => {
-  errorMsg.value = ''
-  
-  if (!email.value || !nickname.value || !password.value) {
-    errorMsg.value = 'Заполните все поля'
-    return
-  }
-
-  const result = await register(email.value, nickname.value, password.value)
-  
-  if (result.success) {
-    await login(email.value, password.value)
-    router.push('/') 
-  } else {
-    errorMsg.value = `Ошибка: ${result.error}`
-  }
-}
-</script>
-
 <template>
-  <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
-    <div class="bg-white p-8 rounded shadow-md w-96">
-      <h1 class="text-2xl mb-6 font-bold text-center text-gray-800">Регистрация</h1>
-      
-      <div v-if="errorMsg" class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm border border-red-200">
-        {{ errorMsg }}
-      </div>
+  <div class="py-16">
+    <div class="flex bg-white rounded-lg shadow-lg overflow-hidden mx-auto max-w-sm lg:max-w-4xl">
+      <div
+        class="hidden lg:block lg:w-1/2 bg-cover"
+        :style="{
+          backgroundImage: 'url(https://source.unsplash.com/Mv9hjnEUHR4/600x800)',
+        }"
+      />
+      <div class="w-full p-8 lg:w-1/2">
+        <h2 class="text-2xl font-semibold text-gray-700 text-center mb-2">Create an Account!</h2>
 
-      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-      <input v-model="email" type="email" class="border p-2 mb-3 w-full rounded" />
+        <form @submit.prevent="handleSubmit">
+          <div v-if="errors.submit" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+            {{ errors.submit }}
+          </div>
 
-      <label class="block text-sm font-medium text-gray-700 mb-1">Никнейм</label>
-      <input v-model="nickname" type="text" class="border p-2 mb-3 w-full rounded" />
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Nickname</label>
+            <input
+              type="text"
+              v-model="nickname"
+              placeholder="Your Nickname"
+              :class="['w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline', 
+                       errors.nickname ? 'border-red-500' : 'border-gray-300']"
+            />
+            <p v-if="errors.nickname" class="text-xs italic text-red-500 mt-1">
+              {{ errors.nickname }}
+            </p>
+          </div>
 
-      <label class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
-      <input v-model="password" type="password" class="border p-2 mb-6 w-full rounded" />
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+            <input
+              type="email"
+              v-model="email"
+              placeholder="Email"
+              :class="['w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline', 
+                       errors.email ? 'border-red-500' : 'border-gray-300']"
+            />
+            <p v-if="errors.email" class="text-xs italic text-red-500 mt-1">
+              {{ errors.email }}
+            </p>
+          </div>
 
-      <button @click="handleRegister" class="bg-green-600 text-white font-bold py-2 w-full rounded">
-        Создать аккаунт
-      </button>
+          <div class="flex gap-4 mb-6">
+            <div class="flex-1">
+              <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+              <input
+                type="password"
+                v-model="password"
+                placeholder="••••••••"
+                :class="['w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline', 
+                         errors.password ? 'border-red-500' : 'border-gray-300']"
+              />
+              <p v-if="errors.password" class="text-xs italic text-red-500 mt-1">
+                {{ errors.password }}
+              </p>
+            </div>
+            <div class="flex-1">
+              <label class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+              <input
+                type="password"
+                v-model="confirmPassword"
+                placeholder="••••••••"
+                :class="['w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline', 
+                         errors.confirmPassword ? 'border-red-500' : 'border-gray-300']"
+              />
+              <p v-if="errors.confirmPassword" class="text-xs italic text-red-500 mt-1">
+                {{ errors.confirmPassword }}
+              </p>
+            </div>
+          </div>
 
-      <div class="mt-4 text-center text-sm">
-        <NuxtLink to="/login" class="text-blue-500">Войти</NuxtLink>
+          <div class="mb-6">
+            <button
+              type="submit"
+              :disabled="loading"
+              :class="['w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200']"
+            >
+              {{ loading ? 'Registering...' : 'Register Account' }}
+            </button>
+          </div>
+
+          <hr class="mb-4 border-gray-300" />
+
+          <div class="text-center mb-3">
+            <NuxtLink to="/forgot-password" class="text-sm text-gray-600 hover:text-gray-800 hover:underline">
+              Forgot Password?
+            </NuxtLink>
+          </div>
+
+          <div class="text-center">
+            <NuxtLink to="/login" class="text-sm text-gray-600 hover:text-gray-800 hover:underline">
+              Already have an account? <span class="font-semibold">Login!</span>
+            </NuxtLink>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from '#app'
+
+const nickname = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const loading = ref(false)
+const errors = ref({})
+const router = useRouter()
+
+const { register, login } = useAuth()
+
+const validateForm = () => {
+  const newErrors = {}
+
+  if (!nickname.value.trim()) newErrors.nickname = 'Nickname is required'
+  if (!email.value.trim()) newErrors.email = 'Email is required'
+  if (!password.value) newErrors.password = 'Password is required'
+  if (password.value.length < 6) newErrors.password = 'Password must be at least 6 characters'
+  if (password.value !== confirmPassword.value) newErrors.confirmPassword = 'Passwords do not match'
+
+  errors.value = newErrors
+  return Object.keys(newErrors).length === 0
+}
+
+const handleSubmit = async () => {
+  if (loading.value) return
+
+  if (!validateForm()) return
+
+  loading.value = true
+  errors.value = {}
+
+  try {
+    const result = await register(email.value, nickname.value, password.value)
+    
+    if (result.success) {
+      const loginResult = await login(email.value, password.value)
+      if (loginResult.success) {
+        router.push('/')
+      } else {
+        errors.value.submit = 'Registration successful, but automatic login failed. Please try logging in.'
+      }
+    } else {
+      errors.value.submit = result.error || 'Registration failed. Please try again.'
+    }
+  } catch (error) {
+    errors.value.submit = 'An error occurred during registration. Please try again.'
+    console.error('Registration error:', error)
+  } finally {
+    loading.value = false
+  }
+}
+</script>
