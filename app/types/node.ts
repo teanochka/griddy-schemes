@@ -27,6 +27,7 @@ export interface CreateNodeDefaults {
   width?: number
   height?: number
   content?: string
+  defaultProps?: Record<string, unknown>
 }
 
 /**
@@ -40,7 +41,7 @@ export function createNode(
 ): Node {
   const defW = defaults?.width ?? 120
   const defH = defaults?.height ?? 120
-  return {
+  const base = {
     id: overrides.id ?? Date.now(),
     type,
     x: overrides.x ?? 0,
@@ -48,6 +49,6 @@ export function createNode(
     width: overrides.width ?? defW,
     height: overrides.height ?? defH,
     parentId: overrides.parentId ?? null,
-    ...overrides,
-  } as Node
+  }
+  return { ...base, ...defaults?.defaultProps, ...overrides } as Node
 }

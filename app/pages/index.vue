@@ -90,7 +90,7 @@ const handleCreate = async () => {
       <NuxtLink 
         v-for="p in projects" 
         :key="p.id" 
-        :to="`/editor/${p.id}`"
+        :to="`/workspace/${p.id}`"
         class="block bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition duration-200 group"
       >
         <div class="flex justify-between items-start mb-4">

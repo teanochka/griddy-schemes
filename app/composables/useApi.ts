@@ -29,5 +29,9 @@ export const useApi = () => {
         })
     }
 
-    return { createProject, getProjects, inviteUser }
+    const getProjectContent = (projectId) => {
+        return authFetch(`/api/projects/${projectId}/content`)
+    }
+
+    return { createProject, getProjects, inviteUser, getProjectContent }
 }
