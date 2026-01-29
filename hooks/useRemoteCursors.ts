@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useProjectSocket } from './useProjectSocket'
 
-type Cursor = {
+type RemoteCursor = {
   x: number
   y: number
   user: string
@@ -23,7 +23,7 @@ export function useRemoteCursors(
   projectId: number | string | undefined,
   nickname: string | undefined
 ) {
-  const [cursors, setCursors] = useState<Record<string, Cursor>>({})
+  const [cursors, setCursors] = useState<Record<string, RemoteCursor>>({})
 
   const handleMessage = useCallback((msg: any) => {
     if (msg.type === 'disconnect') {
@@ -45,7 +45,6 @@ export function useRemoteCursors(
         },
       }))
     }
-    
   }, [])
 
   useProjectSocket(projectId, nickname, handleMessage)

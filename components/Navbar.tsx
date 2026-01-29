@@ -8,8 +8,6 @@ import { ActiveElement, NavbarProps } from "@/types/type";
 
 import { Button } from "@/components/ui/button";
 import ShapesMenu from "@/components/ShapesMenu";
-import ActiveUsers from "@/components/users/ActiveUsers";
-import { NewThread } from "@/components/comments/NewThread";
 
 const Navbar = ({ activeElement, imageInputRef, handleImageUpload, handleActiveElement }: NavbarProps) => {
   const isActive = (value: string | Array<ActiveElement>) =>
@@ -41,18 +39,6 @@ const Navbar = ({ activeElement, imageInputRef, handleImageUpload, handleActiveE
                 handleActiveElement={handleActiveElement}
                 handleImageUpload={handleImageUpload}
               />
-            ) : item?.value === "comments" ? (
-              // If value is comments, trigger the NewThread component
-              <NewThread>
-                <Button className="relative w-5 h-5 object-contain">
-                  <Image
-                    src={item.icon}
-                    alt={item.name}
-                    fill
-                    className={isActive(item.value) ? "invert" : ""}
-                  />
-                </Button>
-              </NewThread>
             ) : (
               <Button className="relative w-5 h-5 object-contain">
                 <Image
@@ -66,8 +52,6 @@ const Navbar = ({ activeElement, imageInputRef, handleImageUpload, handleActiveE
           </li>
         ))}
       </ul>
-
-      <ActiveUsers />
     </nav>
   );
 };

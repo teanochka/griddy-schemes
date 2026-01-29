@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ShapesMenuProps } from "@/types/type";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 
 const ShapesMenu = ({
   item,
