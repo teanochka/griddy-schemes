@@ -4,7 +4,10 @@
     class="absolute cursor-move select-none transition-shadow duration-200
            shadow-sm hover:shadow-md bg-white rounded-lg overflow-hidden
            opacity-100 z-10 min-w-[50px] min-h-[50px]"
-    :class="{ 'opacity-80 shadow-2xl z-50 cursor-grabbing': isDragging }"
+    :class="{
+      'opacity-80 shadow-2xl z-50 cursor-grabbing': isDragging,
+      'ring-2 ring-blue-500 ring-offset-2': selected && !isDragging,
+    }"
     :style="{
       left: `${node.x}px`,
       top: `${node.y}px`,
@@ -12,7 +15,7 @@
       height: `${node.height}px`,
       ...(typeof node.style === 'object' && node.style ? node.style : {}),
     }"
-    @mousedown.prevent="onMouseDown"
+    @mousedown.stop.prevent="onMouseDown"
   >
     <div class="w-full h-full relative">
       <component
@@ -37,63 +40,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import type { Node } from '@/types/node'
 import { componentRegistry } from '@/data/componentRegistry'
 
 const props = defineProps<{
   node: Node
   workspaceRef: { value: HTMLElement | null } | null
+  selected?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:position': [id: number | string, x: number, y: number]
   'update:size': [id: number | string, w: number, h: number]
   'update:content': [value: string]
+  select: []
 }>()
 
 const el = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
 const isResizing = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
-const lastRect = ref<DOMRect | null>(null)
 
 const component = computed(() => componentRegistry.getType(props.node.type)?.component)
 
-function getRect(): DOMRect | null {
-  const wr = props.workspaceRef?.value
-  return wr ? wr.getBoundingClientRect() : null
-}
-
 function onMouseDown(e: MouseEvent) {
-  const rect = getRect()
-  if (!rect) return
-  lastRect.value = rect
+  emit('select')
+  const target = e.target as HTMLElement
+  if (target.closest('input, textarea, [contenteditable="true"]')) {
+    return
+  }
   isDragging.value = true
   dragOffset.value = {
-    x: e.clientX - rect.left - props.node.x,
-    y: e.clientY - rect.top - props.node.y,
+    x: e.clientX - props.node.x,
+    y: e.clientY - props.node.y,
   }
   window.addEventListener('mousemove', onDragMove)
   window.addEventListener('mouseup', onDragUp)
 }
 
 function onDragMove(e: MouseEvent) {
-  const r = lastRect.value
-  if (!r) return
-  const x = Math.round(e.clientX - r.left - dragOffset.value.x)
-  const y = Math.round(e.clientY - r.top - dragOffset.value.y)
+  const x = Math.round(e.clientX  - dragOffset.value.x)
+  const y = Math.round(e.clientY - dragOffset.value.y)
   emit('update:position', props.node.id, x, y)
 }
 
 function onDragUp() {
   isDragging.value = false
-  lastRect.value = null
   window.removeEventListener('mousemove', onDragMove)
   window.removeEventListener('mouseup', onDragUp)
 }
 
 function startResize(e: MouseEvent) {
+  emit('select')
   isResizing.value = true
   e.stopPropagation()
   const startX = e.clientX

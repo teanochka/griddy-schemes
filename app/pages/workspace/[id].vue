@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LeftPanel from '@/components/panels/LeftPanel.vue'
 import DragImage from '@/components/DragImage.vue'
 import CanvasNode from '@/components/workspace/CanvasNode.vue'
+import ContextMenu from '@/components/panels/ContextMenu.vue'
 import { isDragging, dragType, dragSource, endDrag } from '@/composables/useDrag'
 import { useCursors } from '@/composables/useCursors'
 import { useAuth } from '@/composables/useAuth'
@@ -25,6 +26,10 @@ const { inviteUser, getProjectContent } = useApi()
 
 const nodes = ref<Node[]>([])
 const workspaceRef = ref<HTMLElement | null>(null)
+const selectedNodeId = ref<number | string | null>(null)
+const selectedNode = computed(() =>
+  selectedNodeId.value ? nodes.value.find((n) => n.id === selectedNodeId.value) ?? null : null
+)
 
 const handleRemoteUpdate = (remoteCards: Node[]) => {
   nodes.value = remoteCards ?? []
@@ -94,6 +99,14 @@ function onContentUpdate(node: Node, value: string) {
   syncCards()
 }
 
+function onSelectNode(node: Node) {
+  selectedNodeId.value = node.id
+}
+
+function onWorkspaceMousedown() {
+  selectedNodeId.value = null
+}
+
 const inviteInput = ref('')
 const inviteStatus = ref('')
 async function handleInvite() {
@@ -149,10 +162,17 @@ onUnmounted(() => {
         ref="workspaceRef"
         class="workspace flex-1 relative overflow-auto bg-slate-50"
         @mousemove="handleWorkspaceMouseMove"
+        @mousedown="onWorkspaceMousedown"
       >
         <div
           class="absolute inset-0 opacity-10 pointer-events-none min-w-full min-h-full"
           style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"
+        />
+
+        <ContextMenu
+          v-if="selectedNode"
+          :node="selectedNode"
+          @update:node="syncCards"
         />
 
         <CanvasNode
@@ -160,9 +180,11 @@ onUnmounted(() => {
           :key="node.id"
           :node="node"
           :workspace-ref="workspaceRef"
+          :selected="selectedNodeId === node.id"
           @update:position="onPositionUpdate"
           @update:size="onSizeUpdate"
           @update:content="(v) => onContentUpdate(node, v)"
+          @select="onSelectNode(node)"
         />
 
         <div
