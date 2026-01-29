@@ -2,7 +2,8 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-passlib[bcrypt]
+passlib[argon2]
 python-multipart
 python-jose
 aiofiles
+dotenv
