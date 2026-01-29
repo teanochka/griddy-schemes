@@ -1,5 +1,5 @@
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const dimensionsOptions = [
   { label: "W", property: "width" },
@@ -9,7 +9,7 @@ const dimensionsOptions = [
 type Props = {
   width: string;
   height: string;
-  isEditingRef: React.MutableRefObject<boolean>;
+  isEditingRef: React.RefObject<boolean>;
   handleInputChange: (property: string, value: string) => void;
 };
 
