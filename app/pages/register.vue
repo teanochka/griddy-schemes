@@ -109,7 +109,6 @@ const nickname = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const loading = ref(false)
 const errors = ref({})
 const router = useRouter()
 
@@ -129,31 +128,17 @@ const validateForm = () => {
 }
 
 const handleSubmit = async () => {
-  if (loading.value) return
-
   if (!validateForm()) return
 
-  loading.value = true
   errors.value = {}
 
-  try {
-    const result = await register(email.value, nickname.value, password.value)
-    
-    if (result.success) {
-      const loginResult = await login(email.value, password.value)
-      if (loginResult.success) {
-        router.push('/')
-      } else {
-        errors.value.submit = 'Registration successful, but automatic login failed. Please try logging in.'
-      }
-    } else {
-      errors.value.submit = result.error || 'Registration failed. Please try again.'
-    }
-  } catch (error) {
-    errors.value.submit = 'An error occurred during registration. Please try again.'
-    console.error('Registration error:', error)
-  } finally {
-    loading.value = false
+  const result = await register(email.value, nickname.value, password.value)
+  
+  if (result.success) {
+    await login(email.value, password.value)
+    router.push('/') 
+  } else {
+    errors.value = `Ошибка: ${result.error}`
   }
 }
 </script>

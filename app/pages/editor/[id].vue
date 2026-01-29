@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import Sidebar from '@/components/Sidebar.vue'
+import LeftPanel from '@/components/panels/LeftPanel.vue'
 import DragImage from '@/components/DragImage.vue'
 import DraggableCard from '@/components/DraggableCard.vue'
 
@@ -132,7 +132,7 @@ onUnmounted(() => {
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-      <Sidebar />
+      <LeftPanel />
       <DragImage />
 
       <div

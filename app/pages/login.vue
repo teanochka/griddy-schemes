@@ -82,7 +82,7 @@
 
         <div class="mt-4 flex items-center justify-between">
           <span class="border-b w-1/5 md:w-1/4"></span>
-          <NuxtLink to="/signup" class="text-xs text-gray-500 uppercase hover:text-gray-700">
+          <NuxtLink to="/register" class="text-xs text-gray-500 uppercase hover:text-gray-700">
             or sign up
           </NuxtLink>
           <span class="border-b w-1/5 md:w-1/4"></span>
@@ -120,6 +120,5 @@ const handleSubmit = async (e) => {
   }
 }
 
-// Предполагаем, что useAuth() существует и экспортирует функцию login
 const { login } = useAuth()
 </script>
