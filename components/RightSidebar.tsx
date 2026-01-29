@@ -3,10 +3,10 @@ import React, { useMemo, useRef } from "react";
 import { RightSidebarProps } from "@/types/type";
 import { bringElement, modifyShape } from "@/lib/shapes";
 
-import Text from "./settings/Text";
-import Color from "./settings/Color";
-import Export from "./settings/Export";
-import Dimensions from "./settings/Dimensions";
+import Text from "@/components/settings/Text";
+import Color from "@/components/settings/Color";
+import Export from "@/components/settings/Export";
+import Dimensions from "@/components/settings/Dimensions";
 
 const RightSidebar = ({
   elementAttributes,

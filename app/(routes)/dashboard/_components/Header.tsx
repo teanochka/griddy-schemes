@@ -1,4 +1,4 @@
-import { useAuth } from "@/app/composables/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
 export const Header = () => {

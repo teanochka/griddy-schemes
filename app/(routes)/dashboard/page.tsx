@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { ProjectCard } from './_components/ProjectCard'
-import { useApi } from '@/app/composables/useApi'
-import { useAuth } from '@/app/composables/useAuth'
+import { useApi } from '@/hooks/useApi'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/solid'
 
