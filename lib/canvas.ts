@@ -13,20 +13,24 @@ import {
 } from "@/types/type";
 import { defaultNavElement } from "@/constants";
 import { createSpecificShape } from "./shapes";
-import fabric from "fabric/fabric-impl";
+import * as fabric from "fabric";
 
 // initialize fabric canvas
 export const initializeFabric = ({
   fabricRef,
   canvasRef,
 }: {
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>;
-  canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
+  fabricRef: React.RefObject<fabric.Canvas | null>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
 }) => {
   // get canvas element
   const canvasElement = document.getElementById("canvas");
 
   // create fabric canvas
+  if (!canvasRef.current) {
+    throw new Error("Canvas element is not mounted");
+  }
+
   const canvas = new fabric.Canvas(canvasRef.current, {
     width: canvasElement?.clientWidth,
     height: canvasElement?.clientHeight,
@@ -47,7 +51,7 @@ export const handleCanvasMouseDown = ({
   shapeRef,
 }: CanvasMouseDown) => {
   // get pointer coordinates
-  const pointer = canvas.getPointer(options.e);
+  const pointer = canvas.getScenePoint(options.e);
 
   /**
    * get target object i.e., the object that is clicked
@@ -55,7 +59,8 @@ export const handleCanvasMouseDown = ({
    *
    * findTarget: http://fabricjs.com/docs/fabric.Canvas.html#findTarget
    */
-  const target = canvas.findTarget(options.e, false);
+  const targetInfo = canvas.findTarget(options.e);
+  const target = targetInfo?.target;
 
   // set canvas drawing mode to false
   canvas.isDrawingMode = false;
@@ -64,8 +69,10 @@ export const handleCanvasMouseDown = ({
   if (selectedShapeRef.current === "freeform") {
     isDrawing.current = true;
     canvas.isDrawingMode = true;
-    canvas.freeDrawingBrush.width = 5;
-    return;
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.width = 5;
+    }
+      return;
   }
 
   canvas.isDrawingMode = false;
@@ -119,7 +126,7 @@ export const handleCanvaseMouseMove = ({
   canvas.isDrawingMode = false;
 
   // get pointer coordinates
-  const pointer = canvas.getPointer(options.e);
+  const pointer = canvas.getScenePoint(options.e);
 
   // depending on the selected shape, set the dimensions of the shape stored in shapeRef in previous step of handelCanvasMouseDown
   // calculate shape dimensions based on pointer coordinates
@@ -237,7 +244,7 @@ export const handlePathCreated = ({
 export const handleCanvasObjectMoving = ({
   options,
 }: {
-  options: fabric.IEvent;
+  options: { e: fabric.TPointerEvent; target?: fabric.Object };
 }) => {
   // get target object which is moving
   const target = options.target as fabric.Object;
@@ -301,7 +308,7 @@ export const handleCanvasSelectionCreated = ({
       width: scaledWidth?.toFixed(0).toString() || "",
       height: scaledHeight?.toFixed(0).toString() || "",
       fill: selectedElement?.fill?.toString() || "",
-      stroke: selectedElement?.stroke || "",
+      stroke: selectedElement?.stroke?.toString() || "",
       // @ts-ignore
       fontSize: selectedElement?.fontSize || "",
       // @ts-ignore
@@ -400,7 +407,7 @@ export const handleCanvasZoom = ({
   options,
   canvas,
 }: {
-  options: fabric.IEvent & { e: WheelEvent };
+  options: {e: fabric.TPointerEvent; target?: fabric.Object} & { e: WheelEvent };
   canvas: fabric.Canvas;
 }) => {
   const delta = options.e?.deltaY;
@@ -416,7 +423,8 @@ export const handleCanvasZoom = ({
 
   // set zoom to canvas
   // zoomToPoint: http://fabricjs.com/docs/fabric.Canvas.html#zoomToPoint
-  canvas.zoomToPoint({ x: options.e.offsetX, y: options.e.offsetY }, zoom);
+  canvas.zoomToPoint(
+    new fabric.Point(options.e.offsetX, options.e.offsetY), zoom);
 
   options.e.preventDefault();
   options.e.stopPropagation();

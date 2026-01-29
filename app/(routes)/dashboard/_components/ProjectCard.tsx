@@ -19,7 +19,7 @@ interface ProjectCardProps {
 export const ProjectCard = ({ project, userId, formatDate }: ProjectCardProps) => {
   return (
     <Link
-      href={`/editor/${project.id}`}
+      href={`/editor`}
       className="block bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-shadow duration-300 group"
     >
       <div className="flex justify-between items-start mb-4">

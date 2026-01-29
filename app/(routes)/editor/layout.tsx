@@ -1,6 +1,4 @@
 import { Work_Sans } from "next/font/google";
-
-import "@app/globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 
@@ -17,11 +15,9 @@ const workSans = Work_Sans({
 });
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
-  <html lang='en'>
-    <body className={`${workSans.className} bg-primary-grey-200`}>
+    <div className={`${workSans.className} bg-primary-grey-200`}>
       <TooltipProvider>{children}</TooltipProvider>
-    </body>
-  </html>
+    </div>
 );
 
 

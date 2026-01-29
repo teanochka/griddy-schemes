@@ -1,6 +1,6 @@
 "use client";
 
-import fabric from "fabric/fabric-impl";
+import * as fabric from "fabric";
 import { useEffect, useRef, useState } from "react";
 
 import {
