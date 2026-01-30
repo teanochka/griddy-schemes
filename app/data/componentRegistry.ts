@@ -1,6 +1,12 @@
 import type { Component } from 'vue'
 import BasicCard from '@/components/nodes/BasicCard.vue'
 import FlexContainer from '@/components/nodes/FlexContainer.vue'
+import CircleShape from '~/components/nodes/shapes/CircleShape.vue'
+import DiamondShape from '~/components/nodes/shapes/DiamondShape.vue'
+import SquareShape from '~/components/nodes/shapes/SquareShape.vue'
+import StarShape from '~/components/nodes/shapes/StarShape.vue'
+import TrapezoidShape from '~/components/nodes/shapes/TrapezoidShape.vue'
+import TriangleShape from '~/components/nodes/shapes/TriangleShape.vue'
 
 export interface ComponentTypeMeta {
   id: string
@@ -38,6 +44,7 @@ const categories: ComponentCategory[] = [
       },
     ],
   },
+
   {
     id: 'layout',
     name: 'Layout',
@@ -53,7 +60,92 @@ const categories: ComponentCategory[] = [
       },
     ],
   },
-  { id: 'shapes', name: 'Фигуры', types: [] },
+  
+  {
+    id: 'shapes',
+    name: 'Фигуры', 
+    types: [
+      {
+        id: 'circle-shape',
+        name: 'Круг',
+        component: CircleShape,
+        defaultWidth: 100,
+        defaultHeight: 100,
+        previewBg: '#dbeafe',
+        previewBorder: '#3b82f6',
+        defaultProps: {
+          backgroundColor: '#3b82f6',
+          borderColor: '#1d4ed8',
+        },
+      },
+      {
+        id: 'square-shape',
+        name: 'Квадрат',
+        component: SquareShape,
+        defaultWidth: 100,
+        defaultHeight: 100,
+        previewBg: '#d1fae5',
+        previewBorder: '#10b981',
+        defaultProps: {
+          backgroundColor: '#10b981',
+          borderColor: '#047857',
+        },
+      },
+      {
+        id: 'triangle-shape',
+        name: 'Треугольник',
+        component: TriangleShape,
+        defaultWidth: 100,
+        defaultHeight: 100,
+        previewBg: '#fef3c7',
+        previewBorder: '#f59e0b',
+        defaultProps: {
+          backgroundColor: '#f59e0b',
+          borderColor: '#d97706',
+        },
+      },
+      {
+        id: 'diamond-shape',
+        name: 'Ромб',
+        component: DiamondShape,
+        defaultWidth: 100,
+        defaultHeight: 100,
+        previewBg: '#f3e8ff',
+        previewBorder: '#8b5cf6',
+        defaultProps: {
+          backgroundColor: '#8b5cf6',
+          borderColor: '#7c3aed',
+        },
+      },
+      {
+        id: 'star-shape',
+        name: 'Звезда',
+        component: StarShape,
+        defaultWidth: 100,
+        defaultHeight: 100,
+        previewBg: '#fef3c7',
+        previewBorder: '#fbbf24',
+        defaultProps: {
+          backgroundColor: '#fbbf24',
+          borderColor: '#f59e0b',
+        },
+      },
+      {
+        id: 'trapezoid-shape',
+        name: 'Трапеция',
+        component: TrapezoidShape,
+        defaultWidth: 120,
+        defaultHeight: 80,
+        previewBg: '#fee2e2',
+        previewBorder: '#ef4444',
+        defaultProps: {
+          backgroundColor: '#ef4444',
+          borderColor: '#dc2626',
+        },
+      },
+    ] 
+  },
+
   { id: 'uml', name: 'UML', types: [] },
   { id: 'flowchart', name: 'Блок-схемы', types: [] },
   { id: 'other', name: 'Прочее', types: [] },
