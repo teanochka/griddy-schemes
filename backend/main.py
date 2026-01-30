@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from typing import List
+from typing import List, Dict
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,34 +57,27 @@ async def create_project(
     current_user: models.User = Depends(auth.get_current_user), 
     db: Session = Depends(get_db)
 ):
-    existing_project = db.query(models.Project).filter_by(title=project.title).first()
-    if existing_project:
-        try:
-            async with aiofiles.open(existing_project.json_path, mode="r") as file:
-                data = await file.read()
-                initial_data = json.loads(data)
-        except FileNotFoundError:
-            raise HTTPException(status_code=404, detail=f"Путь к файлу {existing_project.json_path} не найден.")
-        return existing_project
-    else:
-        filename = f"{uuid.uuid4().hex[:8]}-{project.title.replace(' ', '_').lower()}.json"
-        filepath = os.path.join(STORAGE_DIR, filename)
-        data_to_save = project.initial_data or {"cards": []}
-        async with aiofiles.open(filepath, mode='w', encoding='utf-8') as file:
-            await file.write(json.dumps(data_to_save))
-        db_project = models.Project(
-            title=project.title,
-            json_path=filepath,
-            owner_id=current_user.id
-        )
-        db.add(db_project)
-        db.commit()
-        db.refresh(db_project)
-        
-        db_project.allowed_users.append(current_user)
-        db.commit()
-        
-        return db_project
+    # ID генерируется автоматически в модели, но filename для JSON создаем здесь
+    json_filename = f"{uuid.uuid4()}.json"
+    filepath = os.path.join(STORAGE_DIR, json_filename)
+    
+    data_to_save = project.initial_data if project.initial_data else {"cards": []}
+    
+    async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
+        await f.write(json.dumps(data_to_save))
+    
+    db_project = models.Project(
+        title=project.title,
+        json_path=filepath,
+        owner_id=current_user.id
+    )
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    
+    db_project.allowed_users.append(current_user)
+    db.commit()
+    return db_project
 
 @app.get("/projects", response_model=List[schemas.ProjectDisplay])
 def get_my_projects(current_user: models.User = Depends(auth.get_current_user)):
@@ -92,7 +85,7 @@ def get_my_projects(current_user: models.User = Depends(auth.get_current_user)):
 
 @app.get("/projects/{project_id}/content")
 async def get_project_content(
-    project_id: int, 
+    project_id: str,  # Changed to str
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -112,7 +105,7 @@ async def get_project_content(
 
 @app.post("/projects/{project_id}/invite")
 def invite_to_project(
-    project_id: int, 
+    project_id: str, # Changed to str
     invite_data: schemas.AddUserToProject,
     db: Session = Depends(get_db)
 ):
@@ -136,20 +129,21 @@ def invite_to_project(
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, List[WebSocket]] = {}
+        # Changed dict key type hint to str
+        self.active_connections: Dict[str, List[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, project_id: int):
+    async def connect(self, websocket: WebSocket, project_id: str):
         await websocket.accept()
         if project_id not in self.active_connections:
             self.active_connections[project_id] = []
         self.active_connections[project_id].append(websocket)
 
-    def disconnect(self, websocket: WebSocket, project_id: int):
+    def disconnect(self, websocket: WebSocket, project_id: str):
         if project_id in self.active_connections:
             if websocket in self.active_connections[project_id]:
                 self.active_connections[project_id].remove(websocket)
 
-    async def broadcast(self, message: dict, project_id: int, sender: WebSocket):
+    async def broadcast(self, message: dict, project_id: str, sender: WebSocket):
         if project_id in self.active_connections:
             for connection in self.active_connections[project_id]:
                 if connection != sender:
@@ -160,7 +154,7 @@ manager = ConnectionManager()
 @app.websocket("/ws/{project_id}/{user_nickname}")
 async def websocket_endpoint(
     websocket: WebSocket, 
-    project_id: int, 
+    project_id: str, # Changed to str
     user_nickname: str,
     db: Session = Depends(get_db)
 ):
