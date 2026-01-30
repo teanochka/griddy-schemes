@@ -16,6 +16,7 @@
       ...(typeof node.style === 'object' && node.style ? node.style : {}),
     }"
     @mousedown.stop.prevent="onMouseDown"
+    @dblclick.stop="handleDoubleClick"
   >
     <div class="w-full h-full relative">
       <component
@@ -117,4 +118,14 @@ function startResize(e: MouseEvent) {
   window.addEventListener('mousemove', onResizeMove)
   window.addEventListener('mouseup', onResizeUp)
 }
+
+function handleDoubleClick(e:MouseEvent) {
+  emit('select')
+  const input = el.value?.querySelector('input')
+  if (input) {
+    input.focus()
+    input.select()
+  }
+}
+
 </script>

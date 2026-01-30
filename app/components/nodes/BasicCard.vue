@@ -6,6 +6,7 @@
     <input
       ref="contentInput"
       type="text"
+      id="cardInput"
       class="text-gray-700 text-sm w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
       :class="textAlignClass"
       :value="node.content"

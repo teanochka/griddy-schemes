@@ -58,7 +58,7 @@
             <div class="flex justify-between">
               <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
               <NuxtLink to="/forgot-password" class="text-xs text-gray-500 hover:text-gray-700">
-                Forget Password?
+                Забыли пароль?
               </NuxtLink>
             </div>
             <input
@@ -71,11 +71,10 @@
 
           <div class="mt-8">
             <button
-              type="submit"
-              :disabled="loading"
+              @click="handleLogin"
               class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium py-2 px-4 rounded transition-colors duration-200"
             >
-              {{ loading ? 'Logging in...' : 'Login' }}
+            Войти
             </button>
           </div>
         </form>
@@ -83,7 +82,7 @@
         <div class="mt-4 flex items-center justify-between">
           <span class="border-b w-1/5 md:w-1/4"></span>
           <NuxtLink to="/register" class="text-xs text-gray-500 uppercase hover:text-gray-700">
-            or sign up
+            Нет аккаунта? Зарегистрироваться
           </NuxtLink>
           <span class="border-b w-1/5 md:w-1/4"></span>
         </div>
@@ -95,30 +94,15 @@
 <script setup>
 const email = ref('')
 const password = ref('')
-const loading = ref(false)
+const { login } = useAuth()
 const router = useRouter()
 
-const handleGoogleSignIn = () => {
-  console.log('Google Sign In clicked')
-}
-
-const handleSubmit = async (e) => {
-  if (loading.value) return
-  
-  loading.value = true
-  try {
-    const success = await login(email.value, password.value)
-    if (success) {
-      router.push('/')
-    } else {
-      alert('Ошибка входа')
-    }
-  } catch (error) {
-    alert('Произошла ошибка при входе')
-  } finally {
-    loading.value = false
+const handleLogin = async () => {
+  const success = await login(email.value, password.value)
+  if (success) {
+    router.push('/')
+  } else {
+    alert('Ошибка входа')
   }
 }
-
-const { login } = useAuth()
 </script>
