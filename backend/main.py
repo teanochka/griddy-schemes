@@ -57,34 +57,26 @@ async def create_project(
     current_user: models.User = Depends(auth.get_current_user), 
     db: Session = Depends(get_db)
 ):
-    existing_project = db.query(models.Project).filter_by(title=project.title).first()
-    if existing_project:
-        try:
-            async with aiofiles.open(existing_project.json_path, mode="r") as file:
-                data = await file.read()
-                initial_data = json.loads(data)
-        except FileNotFoundError:
-            raise HTTPException(status_code=404, detail=f"Путь к файлу {existing_project.json_path} не найден.")
-        return existing_project
-    else:
-        filename = f"{uuid.uuid4().hex[:8]}-{project.title.replace(' ', '_').lower()}.json"
-        filepath = os.path.join(STORAGE_DIR, filename)
-        data_to_save = project.initial_data or {"cards": []}
-        async with aiofiles.open(filepath, mode='w', encoding='utf-8') as file:
-            await file.write(json.dumps(data_to_save))
-        db_project = models.Project(
-            title=project.title,
-            json_path=filepath,
-            owner_id=current_user.id
-        )
-        db.add(db_project)
-        db.commit()
-        db.refresh(db_project)
-        
-        db_project.allowed_users.append(current_user)
-        db.commit()
-        
-        return db_project
+    filename = f"{uuid.uuid4()}.json"
+    filepath = os.path.join(STORAGE_DIR, filename)
+    
+    data_to_save = project.initial_data if project.initial_data else {"cards": []}
+    
+    async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
+        await f.write(json.dumps(data_to_save))
+    
+    db_project = models.Project(
+        title=project.title,
+        json_path=filepath,
+        owner_id=current_user.id
+    )
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    
+    db_project.allowed_users.append(current_user)
+    db.commit()
+    return db_project
 
 @app.get("/projects", response_model=List[schemas.ProjectDisplay])
 def get_my_projects(current_user: models.User = Depends(auth.get_current_user)):
