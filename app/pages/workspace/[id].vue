@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LeftPanel from '@/components/panels/LeftPanel.vue'
+import LayersPanel from '@/components/panels/LayersPanel.vue'
 import DragImage from '@/components/DragImage.vue'
 import CanvasNode from '@/components/workspace/CanvasNode.vue'
 import ContextMenu from '@/components/panels/ContextMenu.vue'
@@ -107,6 +108,15 @@ function onWorkspaceMousedown() {
   selectedNodeId.value = null
 }
 
+function handleLayerSelect(id: number | string) {
+  selectedNodeId.value = id
+}
+
+function handleLayerReorder(newOrder: Node[]) {
+  nodes.value = newOrder
+  syncCards()
+}
+
 const inviteInput = ref('')
 const inviteStatus = ref('')
 async function handleInvite() {
@@ -207,6 +217,13 @@ onUnmounted(() => {
           </span>
         </div>
       </div>
+
+      <LayersPanel
+        :nodes="nodes"
+        :selected-node-id="selectedNodeId"
+        @select="handleLayerSelect"
+        @reorder="handleLayerReorder"
+      />
     </div>
   </div>
 </template>
