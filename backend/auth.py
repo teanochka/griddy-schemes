@@ -9,10 +9,8 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import models, database
 
-# Load environment variables
 load_dotenv()
 
-# Get sensitive data from environment variables
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("No SECRET_KEY set for Flask application")
@@ -20,7 +18,6 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
-# Update CryptContext to use argon2
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

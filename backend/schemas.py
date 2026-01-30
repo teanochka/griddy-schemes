@@ -29,7 +29,7 @@ class ProjectCreate(ProjectBase):
     initial_data: Optional[Dict[str, Any]] = None 
 
 class ProjectDisplay(ProjectBase):
-    id: str  # Changed from int to str (UUID)
+    id: str
     created_at: datetime
     owner: UserDisplay
     allowed_users: List[UserDisplay] = []

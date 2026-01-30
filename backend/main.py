@@ -23,7 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-STORAGE_DIR = "storage"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STORAGE_DIR = os.path.join(BASE_DIR, "storage")
 os.makedirs(STORAGE_DIR, exist_ok=True)
 
 @app.post("/token")
@@ -57,7 +58,6 @@ async def create_project(
     current_user: models.User = Depends(auth.get_current_user), 
     db: Session = Depends(get_db)
 ):
-    # ID генерируется автоматически в модели, но filename для JSON создаем здесь
     json_filename = f"{uuid.uuid4()}.json"
     filepath = os.path.join(STORAGE_DIR, json_filename)
     
@@ -85,7 +85,7 @@ def get_my_projects(current_user: models.User = Depends(auth.get_current_user)):
 
 @app.get("/projects/{project_id}/content")
 async def get_project_content(
-    project_id: str,  # Changed to str
+    project_id: str, 
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -93,19 +93,33 @@ async def get_project_content(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    if current_user.id != project.owner_id and current_user not in project.allowed_users:
+    is_owner = current_user.id == project.owner_id
+    is_allowed = any(u.id == current_user.id for u in project.allowed_users)
+    
+    if not is_owner and not is_allowed:
          raise HTTPException(status_code=403, detail="Access denied")
 
+    clean_filename = os.path.basename(project.json_path)
+    filepath = os.path.join(STORAGE_DIR, clean_filename)
+    
+    if not os.path.exists(filepath):
+        return {"cards": []}
+
     try:
-        async with aiofiles.open(project.json_path, mode='r', encoding='utf-8') as f:
-            content = await f.read()
-            return json.loads(content)
-    except FileNotFoundError:
+        lock = get_project_lock(project_id)
+        async with lock:
+            async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
+                content = await f.read()
+                
+                if not content:
+                    return {"cards": []}
+                return json.loads(content)
+    except Exception as e:
         return {"cards": []}
 
 @app.post("/projects/{project_id}/invite")
 def invite_to_project(
-    project_id: str, # Changed to str
+    project_id: str, 
     invite_data: schemas.AddUserToProject,
     db: Session = Depends(get_db)
 ):
@@ -129,7 +143,6 @@ def invite_to_project(
 
 class ConnectionManager:
     def __init__(self):
-        # Changed dict key type hint to str
         self.active_connections: Dict[str, List[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, project_id: str):
@@ -154,13 +167,39 @@ manager = ConnectionManager()
 @app.websocket("/ws/{project_id}/{user_nickname}")
 async def websocket_endpoint(
     websocket: WebSocket, 
-    project_id: str, # Changed to str
+    project_id: str, 
     user_nickname: str,
     db: Session = Depends(get_db)
 ):
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    
+    if not project:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await manager.connect(websocket, project_id)
     
-    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    try:
+        filename = os.path.basename(project.json_path)
+        filepath = os.path.join(STORAGE_DIR, filename)
+        
+        if os.path.exists(filepath):
+            async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
+                content = await f.read()
+                data = json.loads(content)
+                cards = data.get("cards", [])
+                
+                await websocket.send_json({
+                    "type": "update_cards",
+                    "data": cards
+                })
+        else:
+             await websocket.send_json({
+                    "type": "update_cards",
+                    "data": []
+                })
+    except Exception as e:
+        pass
 
     try:
         while True:
@@ -176,9 +215,16 @@ async def websocket_endpoint(
 
             elif msg_type == "update_cards":
                 cards = data.get("cards")
-                if project and cards is not None:
-                    async with aiofiles.open(project.json_path, mode='w', encoding='utf-8') as f:
-                        await f.write(json.dumps({"cards": cards}))
+                
+                if cards is not None:
+                    filename = os.path.basename(project.json_path)
+                    filepath = os.path.join(STORAGE_DIR, filename)
+                    
+                    try:
+                        async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
+                            await f.write(json.dumps({"cards": cards}))
+                    except Exception as e:
+                        pass
                 
                 await manager.broadcast({
                     "user": user_nickname,
