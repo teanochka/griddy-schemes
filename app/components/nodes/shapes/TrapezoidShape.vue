@@ -1,38 +1,45 @@
 <template>
-  <div
-    class="w-full h-full flex items-center justify-center relative overflow-hidden"
-  >
-    <div
+  <div class="w-full h-full flex items-center justify-center relative">
+    <svg
       class="w-full h-full"
-      :style="trapezoidStyle"
-    />
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      <defs v-if="hasShadow">
+        <filter :id="`shadow-${node.id}`">
+          <feDropShadow
+            :dx="node.shadowOffsetX ?? 0"
+            :dy="node.shadowOffsetY ?? 5"
+            :stdDeviation="(node.shadowBlur ?? 10) / 2"
+            :flood-color="node.shadowColor ?? '#00000040'"
+          />
+        </filter>
+      </defs>
+      <polygon
+        points="30,10 70,10 90,90 10,90"
+        :fill="node.backgroundColor || '#ef4444'"
+        :stroke="node.borderColor"
+        :stroke-width="strokeWidth"
+        :filter="hasShadow ? `url(#shadow-${node.id})` : undefined"
+      />
+    </svg>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue'
+import { computed } from 'vue'
 import type { Node } from '@/types/node'
 
 const props = defineProps<{
   node: Node
 }>()
 
-const trapezoidStyle = computed(() => {
-  const topWidth = props.node.width * 0.6
-  const bottomWidth = props.node.width
-  
-   const s: Record<string, string> = {
-    position: 'absolute',
-    top: '0',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '0',
-    height: '0',
-    borderLeft: `${topWidth / 2}px solid transparent`,
-    borderRight: `${topWidth / 2}px solid transparent`,
-    borderTop: `${props.node.height}px solid ${props.node.backgroundColor || '#ef4444'}`,
-    borderBottom: 'none',
-  }
-  return s
+const hasShadow = computed(() => {
+  return !!(props.node.shadowColor || props.node.shadowBlur)
+})
+
+const strokeWidth = computed(() => {
+  if (!props.node.borderColor && !props.node.borderWidth) return 0
+  return props.node.borderWidth ?? 2
 })
 </script>

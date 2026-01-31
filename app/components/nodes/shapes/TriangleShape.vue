@@ -1,11 +1,28 @@
 <template>
-  <div
-    class="w-full h-full flex items-center justify-center relative overflow-hidden"
-  >
-    <div
+  <div class="w-full h-full flex items-center justify-center relative">
+    <svg
       class="w-full h-full"
-      :style="triangleStyle"
-    ></div>
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      <defs v-if="hasShadow">
+        <filter :id="`shadow-${node.id}`">
+          <feDropShadow
+            :dx="node.shadowOffsetX ?? 0"
+            :dy="node.shadowOffsetY ?? 5"
+            :stdDeviation="(node.shadowBlur ?? 10) / 2"
+            :flood-color="node.shadowColor ?? '#00000040'"
+          />
+        </filter>
+      </defs>
+      <polygon
+        points="50,10 90,90 10,90"
+        :fill="node.backgroundColor || '#f59e0b'"
+        :stroke="node.borderColor"
+        :stroke-width="strokeWidth"
+        :filter="hasShadow ? `url(#shadow-${node.id})` : undefined"
+      />
+    </svg>
   </div>
 </template>
 
@@ -17,21 +34,12 @@ const props = defineProps<{
   node: Node
 }>()
 
-const emit = defineEmits<{
-  'update:content': [value: string]
-}>()
+const hasShadow = computed(() => {
+  return !!(props.node.shadowColor || props.node.shadowBlur)
+})
 
-const triangleStyle = computed(() => {
-  const s: Record<string, string> = {
-    position: 'absolute',
-    top: '0',
-    left: '0',
-    width: '0',
-    height: '0',
-    borderLeft: `${props.node.width / 2}px solid transparent`,
-    borderRight: `${props.node.width / 2}px solid transparent`,
-    borderBottom: `${props.node.height}px solid ${props.node.backgroundColor || '#f59e0b'}`,
-  }
-  return s
+const strokeWidth = computed(() => {
+  if (!props.node.borderColor && !props.node.borderWidth) return 0
+  return props.node.borderWidth ?? 2
 })
 </script>

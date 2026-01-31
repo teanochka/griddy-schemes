@@ -1,8 +1,28 @@
 <template>
-  <div
-    class="w-full h-full flex items-center justify-center"
-    :style="shapeStyle"
-  >
+  <div class="w-full h-full flex items-center justify-center relative">
+    <svg
+      class="w-full h-full"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      <defs v-if="hasShadow">
+        <filter :id="`shadow-${node.id}`">
+          <feDropShadow
+            :dx="node.shadowOffsetX ?? 0"
+            :dy="node.shadowOffsetY ?? 5"
+            :stdDeviation="(node.shadowBlur ?? 10) / 2"
+            :flood-color="node.shadowColor ?? '#00000040'"
+          />
+        </filter>
+      </defs>
+      <polygon
+        points="50,10 90,50 50,90 10,50"
+        :fill="node.backgroundColor || '#8b5cf6'"
+        :stroke="node.borderColor"
+        :stroke-width="strokeWidth"
+        :filter="hasShadow ? `url(#shadow-${node.id})` : undefined"
+      />
+    </svg>
   </div>
 </template>
 
@@ -14,16 +34,12 @@ const props = defineProps<{
   node: Node
 }>()
 
-const shapeStyle = computed(() => {
-  const style: Record<string, string> = {
-    backgroundColor: props.node.backgroundColor || '#8b5cf6',
-    transform: 'rotate(45deg)',
-  }
-  
-  if (props.node.borderColor) {
-    style.border = `2px solid ${props.node.borderColor}`
-  }
-  
-  return style
+const hasShadow = computed(() => {
+  return !!(props.node.shadowColor || props.node.shadowBlur)
+})
+
+const strokeWidth = computed(() => {
+  if (!props.node.borderColor && !props.node.borderWidth) return 0
+  return props.node.borderWidth ?? 2
 })
 </script>

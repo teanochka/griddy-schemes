@@ -1,14 +1,15 @@
 <template>
   <div
-    class="w-full h-full p-2 flex items-center justify-center rounded-lg border border-gray-300 bg-white"
-    :style="nodeStyle"
+    class="w-full h-full p-2 flex items-center justify-center border border-gray-300"
+    :style="cardStyle"
   >
     <input
       ref="contentInput"
       type="text"
       id="cardInput"
-      class="text-gray-700 text-sm w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
+      class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
       :class="textAlignClass"
+      :style="textStyle"
       :value="node.content"
       @input="onInput"
     />
@@ -29,15 +30,52 @@ const emit = defineEmits<{
 
 const contentInput = ref<HTMLInputElement | null>(null)
 
-const nodeStyle = computed(() => {
+const cardStyle = computed(() => {
   const s: Record<string, string> = {}
-  if (props.node.backgroundColor) s.backgroundColor = props.node.backgroundColor
+  
+  // Background
+  if (props.node.backgroundColor) {
+    s.backgroundColor = props.node.backgroundColor
+  }
+  
+  // Border
+  if (props.node.borderColor) {
+    s.borderColor = props.node.borderColor
+  }
+  if (props.node.borderWidth !== undefined) {
+    s.borderWidth = `${props.node.borderWidth}px`
+  }
+  
+  // Border radius
+  if (props.node.borderRadius !== undefined) {
+    s.borderRadius = `${props.node.borderRadius}px`
+  } else {
+    s.borderRadius = '8px' // Default
+  }
+  
+  // Shadow
+  if (props.node.shadowColor || props.node.shadowBlur) {
+    const color = props.node.shadowColor ?? '#00000040'
+    const blur = props.node.shadowBlur ?? 10
+    const offsetX = props.node.shadowOffsetX ?? 0
+    const offsetY = props.node.shadowOffsetY ?? 5
+    s.boxShadow = `${offsetX}px ${offsetY}px ${blur}px ${color}`
+  }
+  
   return s
 })
 
 const textAlignClass = computed(() => {
   const a = props.node.textAlign ?? 'center'
   return a === 'left' ? 'text-left' : a === 'right' ? 'text-right' : 'text-center'
+})
+
+const textStyle = computed(() => {
+  const s: Record<string, string> = {}
+  if (props.node.fontSize) s.fontSize = `${props.node.fontSize}px`
+  if (props.node.textColor) s.color = props.node.textColor
+  if (props.node.fontWeight) s.fontWeight = String(props.node.fontWeight)
+  return s
 })
 
 function onInput(e: Event) {

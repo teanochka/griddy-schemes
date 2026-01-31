@@ -11,13 +11,45 @@ export interface Node {
   width: number
   height: number
   parentId?: number | string | null
+
+  // Content
   /** Базовые карточки, текст и т.п. */
   content?: string
-  /** Заливка, цвет обводки и т.д. */
-  backgroundColor?: string
-  textAlign?: 'left' | 'center' | 'right'
   /** image-block */
   src?: string
+
+  // Fill & Stroke
+  /** Заливка */
+  backgroundColor?: string
+  /** Цвет обводки */
+  borderColor?: string
+  /** Толщина обводки */
+  borderWidth?: number
+  /** Радиус скругления */
+  borderRadius?: number
+
+  // Typography
+  /** Выравнивание текста */
+  textAlign?: 'left' | 'center' | 'right'
+  /** Размер шрифта */
+  fontSize?: number
+  /** Цвет текста */
+  textColor?: string
+  /** Жирность текста */
+  fontWeight?: number
+
+  // Effects
+  /** Прозрачность (0-100) */
+  opacity?: number
+  /** Цвет тени */
+  shadowColor?: string
+  /** Размытие тени */
+  shadowBlur?: number
+  /** Смещение тени по X */
+  shadowOffsetX?: number
+  /** Смещение тени по Y */
+  shadowOffsetY?: number
+
   /** Совместимость со старыми карточками */
   style?: Record<string, string>
   [key: string]: unknown
