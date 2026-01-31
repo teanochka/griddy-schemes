@@ -27,10 +27,30 @@ const { inviteUser, getProjectContent } = useApi()
 
 const nodes = ref<Node[]>([])
 const workspaceRef = ref<HTMLElement | null>(null)
-const selectedNodeId = ref<number | string | null>(null)
-const selectedNode = computed(() =>
-  selectedNodeId.value ? nodes.value.find((n) => n.id === selectedNodeId.value) ?? null : null
+// Multi-selection state using Set for O(1) lookups
+const selectedNodeIds = ref<Set<number | string>>(new Set())
+const selectedNodes = computed(() =>
+  nodes.value.filter((n) => selectedNodeIds.value.has(n.id))
 )
+const selectedNode = computed(() =>
+  selectedNodeIds.value.size === 1 ? selectedNodes.value[0] ?? null : null
+)
+
+// Marquee selection state
+const isMarqueeActive = ref(false)
+const marqueeStart = ref({ x: 0, y: 0 })
+const marqueeCurrent = ref({ x: 0, y: 0 })
+const marqueeRect = computed(() => {
+  const x1 = Math.min(marqueeStart.value.x, marqueeCurrent.value.x)
+  const y1 = Math.min(marqueeStart.value.y, marqueeCurrent.value.y)
+  const x2 = Math.max(marqueeStart.value.x, marqueeCurrent.value.x)
+  const y2 = Math.max(marqueeStart.value.y, marqueeCurrent.value.y)
+  return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 }
+})
+
+// Clipboard for copy/paste
+const clipboard = ref<Node[]>([])
+
 
 const handleRemoteUpdate = (remoteCards: Node[]) => {
   nodes.value = remoteCards ?? []
@@ -79,11 +99,26 @@ function handleGlobalMouseUp(e: MouseEvent) {
 
 function onPositionUpdate(id: number | string, x: number, y: number) {
   const n = nodes.value.find((c) => c.id === id)
-  if (n) {
+  if (!n) return
+
+  // Multi-node drag: if multiple nodes are selected and this node is selected
+  if (selectedNodeIds.value.size > 1 && selectedNodeIds.value.has(id)) {
+    // Calculate delta from old position
+    const deltaX = x - n.x
+    const deltaY = y - n.y
+
+    // Apply delta to all selected nodes
+    selectedNodes.value.forEach((node) => {
+      node.x += deltaX
+      node.y += deltaY
+    })
+  } else {
+    // Single node drag
     n.x = x
     n.y = y
-    syncCards()
   }
+  
+  syncCards()
 }
 
 function onSizeUpdate(id: number | string, w: number, h: number) {
@@ -100,22 +135,215 @@ function onContentUpdate(node: Node, value: string) {
   syncCards()
 }
 
-function onSelectNode(node: Node) {
-  selectedNodeId.value = node.id
+function onSelectNode(node: Node, event?: MouseEvent) {
+  const isCtrl = event?.ctrlKey || event?.metaKey
+  const isShift = event?.shiftKey
+
+  if (isCtrl) {
+    // Toggle selection
+    if (selectedNodeIds.value.has(node.id)) {
+      selectedNodeIds.value.delete(node.id)
+    } else {
+      selectedNodeIds.value.add(node.id)
+    }
+    // Force reactivity
+    selectedNodeIds.value = new Set(selectedNodeIds.value)
+  } else {
+    // Regular click: clear and select this one
+    selectedNodeIds.value = new Set([node.id])
+  }
 }
 
-function onWorkspaceMousedown() {
-  selectedNodeId.value = null
+function onWorkspaceMousedown(e: MouseEvent) {
+  // Check if clicking on empty space (not a node)
+  const target = e.target as HTMLElement
+  if (target.closest('.canvas-node')) return
+
+  // Clear selection unless modifier key is held
+  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+    selectedNodeIds.value = new Set()
+  }
+
+  // Start marquee selection
+  if (!workspaceRef.value) return
+  const rect = workspaceRef.value.getBoundingClientRect()
+  const x = e.clientX - rect.left + workspaceRef.value.scrollLeft
+  const y = e.clientY - rect.top + workspaceRef.value.scrollTop
+
+  isMarqueeActive.value = true
+  marqueeStart.value = { x, y }
+  marqueeCurrent.value = { x, y }
+
+  window.addEventListener('mousemove', onMarqueeMove)
+  window.addEventListener('mouseup', onMarqueeEnd)
 }
 
-function handleLayerSelect(id: number | string) {
-  selectedNodeId.value = id
+function onMarqueeMove(e: MouseEvent) {
+  if (!isMarqueeActive.value || !workspaceRef.value) return
+  const rect = workspaceRef.value.getBoundingClientRect()
+  const x = e.clientX - rect.left + workspaceRef.value.scrollLeft
+  const y = e.clientY - rect.top + workspaceRef.value.scrollTop
+  marqueeCurrent.value = { x, y }
+}
+
+function onMarqueeEnd(e: MouseEvent) {
+  if (!isMarqueeActive.value) return
+
+  // Calculate which nodes intersect with marquee
+  const selected = new Set<number | string>()
+  const rect = marqueeRect.value
+
+  nodes.value.forEach((node) => {
+    // Check if node intersects with marquee rectangle
+    const nodeRight = node.x + node.width
+    const nodeBottom = node.y + node.height
+    const rectRight = rect.x + rect.width
+    const rectBottom = rect.y + rect.height
+
+    const intersects = (
+      node.x < rectRight &&
+      nodeRight > rect.x &&
+      node.y < rectBottom &&
+      nodeBottom > rect.y
+    )
+
+    if (intersects) {
+      selected.add(node.id)
+    }
+  })
+
+  // If Shift/Ctrl held, union with existing selection, otherwise replace
+  if (e.ctrlKey || e.metaKey || e.shiftKey) {
+    selectedNodeIds.value = new Set([...selectedNodeIds.value, ...selected])
+  } else {
+    selectedNodeIds.value = selected
+  }
+
+  isMarqueeActive.value = false
+  window.removeEventListener('mousemove', onMarqueeMove)
+  window.removeEventListener('mouseup', onMarqueeEnd)
+}
+
+function handleLayerSelect(id: number | string, event?: MouseEvent) {
+  const isCtrl = event?.ctrlKey || event?.metaKey
+  const isShift = event?.shiftKey
+
+  if (isCtrl) {
+    // Toggle selection
+    if (selectedNodeIds.value.has(id)) {
+      selectedNodeIds.value.delete(id)
+    } else {
+      selectedNodeIds.value.add(id)
+    }
+    selectedNodeIds.value = new Set(selectedNodeIds.value)
+  } else if (isShift && selectedNodeIds.value.size > 0) {
+    // Range selection
+    const lastSelected = Array.from(selectedNodeIds.value)[selectedNodeIds.value.size - 1]
+    const lastIndex = nodes.value.findIndex(n => n.id === lastSelected)
+    const currentIndex = nodes.value.findIndex(n => n.id === id)
+
+    if (lastIndex !== -1 && currentIndex !== -1) {
+      const start = Math.min(lastIndex, currentIndex)
+      const end = Math.max(lastIndex, currentIndex)
+      const range = nodes.value.slice(start, end + 1).map(n => n.id)
+      selectedNodeIds.value = new Set([...selectedNodeIds.value, ...range])
+    }
+  } else {
+    // Regular click: select only this one
+    selectedNodeIds.value = new Set([id])
+  }
 }
 
 function handleLayerReorder(newOrder: Node[]) {
   nodes.value = newOrder
   syncCards()
 }
+
+function onDeleteNode(id: number | string) {
+  // Delete all selected nodes if multiple are selected and this node is in the selection
+  if (selectedNodeIds.value.size > 1 && selectedNodeIds.value.has(id)) {
+    nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
+    selectedNodeIds.value = new Set()
+  } else {
+    // Delete single node
+    const index = nodes.value.findIndex((n) => n.id === id)
+    if (index !== -1) {
+      nodes.value.splice(index, 1)
+      selectedNodeIds.value.delete(id)
+      selectedNodeIds.value = new Set(selectedNodeIds.value)
+    }
+  }
+  syncCards()
+}
+
+function handleKeyDown(e: KeyboardEvent) {
+  // Ignore if typing in input/textarea/contenteditable
+  const target = e.target as HTMLElement
+  if (target.matches('input, textarea, [contenteditable="true"]')) {
+    return
+  }
+
+  const isCtrl = e.ctrlKey || e.metaKey
+
+  // Copy (Ctrl+C)
+  if (isCtrl && e.key === 'c') {
+    if (selectedNodeIds.value.size > 0) {
+      e.preventDefault()
+      // Deep copy selected nodes
+      clipboard.value = selectedNodes.value.map(node => ({ ...node }))
+    }
+  }
+
+  // Cut (Ctrl+X)
+  if (isCtrl && e.key === 'x') {
+    if (selectedNodeIds.value.size > 0) {
+      e.preventDefault()
+      // Copy to clipboard
+      clipboard.value = selectedNodes.value.map(node => ({ ...node }))
+      // Delete original nodes
+      nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
+      selectedNodeIds.value = new Set()
+      syncCards()
+    }
+  }
+
+  // Paste (Ctrl+V)
+  if (isCtrl && e.key === 'v') {
+    if (clipboard.value.length > 0) {
+      e.preventDefault()
+      const newNodes: Node[] = []
+      const newIds = new Set<number | string>()
+
+      clipboard.value.forEach(node => {
+        // Generate unique ID
+        const newId = Date.now() + Math.random() * 1000
+        const newNode = {
+          ...node,
+          id: newId,
+          x: node.x + 20, // Offset by 20px
+          y: node.y + 20,
+        }
+        newNodes.push(newNode)
+        newIds.add(newId)
+      })
+
+      nodes.value.push(...newNodes)
+      selectedNodeIds.value = newIds
+      syncCards()
+    }
+  }
+
+  // Delete on Delete or Backspace
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedNodeIds.value.size > 0) {
+      e.preventDefault() // Prevent browser back navigation on Backspace
+      nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
+      selectedNodeIds.value = new Set()
+      syncCards()
+    }
+  }
+}
+
 
 const inviteInput = ref('')
 const inviteStatus = ref('')
@@ -132,6 +360,7 @@ async function handleInvite() {
 
 onMounted(async () => {
   window.addEventListener('mouseup', handleGlobalMouseUp)
+  window.addEventListener('keydown', handleKeyDown)
   connect()
   try {
     const data = await getProjectContent(projectId)
@@ -145,6 +374,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('mouseup', handleGlobalMouseUp)
+  window.removeEventListener('keydown', handleKeyDown)
 })
 </script>
 
@@ -188,13 +418,15 @@ onUnmounted(() => {
         <CanvasNode
           v-for="node in nodes"
           :key="node.id"
+          class="canvas-node"
           :node="node"
           :workspace-ref="workspaceRef"
-          :selected="selectedNodeId === node.id"
+          :selected="selectedNodeIds.has(node.id)"
           @update:position="onPositionUpdate"
           @update:size="onSizeUpdate"
           @update:content="(v) => onContentUpdate(node, v)"
-          @select="onSelectNode(node)"
+          @select="(e) => onSelectNode(node, e)"
+          @delete="onDeleteNode(node.id)"
         />
 
         <div
@@ -216,11 +448,23 @@ onUnmounted(() => {
             {{ userKey }}
           </span>
         </div>
+
+        <!-- Marquee Selection Rectangle -->
+        <div
+          v-if="isMarqueeActive"
+          class="absolute pointer-events-none border-2 border-blue-500 bg-blue-100/20 z-[9998]"
+          :style="{
+            left: `${marqueeRect.x}px`,
+            top: `${marqueeRect.y}px`,
+            width: `${marqueeRect.width}px`,
+            height: `${marqueeRect.height}px`,
+          }"
+        />
       </div>
 
       <LayersPanel
         :nodes="nodes"
-        :selected-node-id="selectedNodeId"
+        :selected-node-ids="Array.from(selectedNodeIds)"
         @select="handleLayerSelect"
         @reorder="handleLayerReorder"
       />

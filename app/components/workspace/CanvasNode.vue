@@ -55,7 +55,8 @@ const emit = defineEmits<{
   'update:position': [id: number | string, x: number, y: number]
   'update:size': [id: number | string, w: number, h: number]
   'update:content': [value: string]
-  select: []
+  select: [event?: MouseEvent]
+  delete: []
 }>()
 
 const el = ref<HTMLElement | null>(null)
@@ -66,7 +67,7 @@ const dragOffset = ref({ x: 0, y: 0 })
 const component = computed(() => componentRegistry.getType(props.node.type)?.component)
 
 function onMouseDown(e: MouseEvent) {
-  emit('select')
+  emit('select', e)
   const target = e.target as HTMLElement
   if (target.closest('input, textarea, [contenteditable="true"]')) {
     return
@@ -93,7 +94,7 @@ function onDragUp() {
 }
 
 function startResize(e: MouseEvent) {
-  emit('select')
+  emit('select', e)
   isResizing.value = true
   e.stopPropagation()
   const startX = e.clientX
@@ -120,7 +121,7 @@ function startResize(e: MouseEvent) {
 }
 
 function handleDoubleClick(e:MouseEvent) {
-  emit('select')
+  emit('select', e)
   const input = el.value?.querySelector('input')
   if (input) {
     input.focus()

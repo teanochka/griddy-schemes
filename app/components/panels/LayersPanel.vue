@@ -14,10 +14,10 @@
           :draggable="true"
           class="flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-colors group"
           :class="{
-            'bg-blue-100 border border-blue-400': node.id === selectedNodeId,
-            'hover:bg-slate-200/80 border border-transparent': node.id !== selectedNodeId,
+            'bg-blue-100 border border-blue-400': isSelected(node.id),
+            'hover:bg-slate-200/80 border border-transparent': !isSelected(node.id),
           }"
-          @click="handleSelect(node.id)"
+          @click="handleSelect($event, node.id)"
           @dragstart="handleDragStart($event, index)"
           @dragover.prevent="handleDragOver($event, index)"
           @drop="handleDrop($event, index)"
@@ -56,11 +56,11 @@ import type { Node } from '@/types/node'
 
 const props = defineProps<{
   nodes: Node[]
-  selectedNodeId: number | string | null
+  selectedNodeIds: (number | string)[]
 }>()
 
 const emit = defineEmits<{
-  select: [id: number | string]
+  select: [id: number | string, event?: MouseEvent]
   reorder: [newOrder: Node[]]
 }>()
 
@@ -70,8 +70,12 @@ const reversedNodes = computed(() => [...props.nodes].reverse())
 const draggedIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
 
-function handleSelect(id: number | string) {
-  emit('select', id)
+function isSelected(id: number | string): boolean {
+  return props.selectedNodeIds.includes(id)
+}
+
+function handleSelect(event: MouseEvent, id: number | string) {
+  emit('select', id, event)
 }
 
 function handleDragStart(e: DragEvent, index: number) {
