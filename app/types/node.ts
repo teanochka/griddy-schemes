@@ -25,8 +25,8 @@ export interface Node {
   borderColor?: string
   /** Толщина обводки */
   borderWidth?: number
-  /** Радиус скругления */
-  borderRadius?: number
+  /** Радиус скругления (число для px, строка для % или других значений) */
+  borderRadius?: number | string
 
   // Typography
   /** Выравнивание текста */

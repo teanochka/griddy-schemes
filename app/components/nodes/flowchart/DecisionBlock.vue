@@ -1,18 +1,29 @@
 <template>
-  <div
-    class="w-full h-full p-2 flex items-center justify-center border border-gray-300"
-    :style="cardStyle"
-  >
-    <input
-      ref="contentInput"
-      type="text"
-      id="cardInput"
-      class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
-      :class="textAlignClass"
-      :style="textStyle"
-      :value="node.content"
-      @input="onInput"
-    />
+  <div class="w-full h-full relative">
+    <svg
+      class="absolute inset-0 w-full h-full"
+      :style="svgStyle"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      <polygon
+        :points="diamondPoints"
+        :fill="fillColor"
+        :stroke="strokeColor"
+        :stroke-width="strokeWidth"
+      />
+    </svg>
+    <div class="absolute inset-0 flex items-center justify-center px-4">
+      <input
+        ref="contentInput"
+        type="text"
+        class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
+        :class="textAlignClass"
+        :style="textStyle"
+        :value="node.content"
+        @input="onInput"
+      />
+    </div>
   </div>
 </template>
 
@@ -30,33 +41,19 @@ const emit = defineEmits<{
 
 const contentInput = ref<HTMLInputElement | null>(null)
 
-const cardStyle = computed(() => {
+// Diamond shape: rotated square
+const diamondPoints = '50,0 100,50 50,100 0,50'
+
+const fillColor = computed(() => props.node.backgroundColor ?? '#ffffff')
+const strokeColor = computed(() => props.node.borderColor ?? '#6b7280')
+const strokeWidth = computed(() => {
+  const width = props.node.borderWidth ?? 1
+  // Scale stroke width for SVG viewBox (100x100)
+  return width * 0.5
+})
+
+const svgStyle = computed(() => {
   const s: Record<string, string> = {}
-  
-  // Background
-  if (props.node.backgroundColor) {
-    s.backgroundColor = props.node.backgroundColor
-  }
-  
-  // Border
-  if (props.node.borderColor) {
-    s.borderColor = props.node.borderColor
-  }
-  if (props.node.borderWidth !== undefined) {
-    s.borderWidth = `${props.node.borderWidth}px`
-  }
-  
-  // Border radius
-  if (props.node.borderRadius !== undefined) {
-    // Handle both number (px) and string (e.g., '50%')
-    if (typeof props.node.borderRadius === 'string') {
-      s.borderRadius = props.node.borderRadius
-    } else {
-      s.borderRadius = `${props.node.borderRadius}px`
-    }
-  } else {
-    s.borderRadius = '8px' // Default
-  }
   
   // Shadow
   if (props.node.shadowColor || props.node.shadowBlur) {
@@ -64,7 +61,7 @@ const cardStyle = computed(() => {
     const blur = props.node.shadowBlur ?? 10
     const offsetX = props.node.shadowOffsetX ?? 0
     const offsetY = props.node.shadowOffsetY ?? 5
-    s.boxShadow = `${offsetX}px ${offsetY}px ${blur}px ${color}`
+    s.filter = `drop-shadow(${offsetX}px ${offsetY}px ${blur}px ${color})`
   }
   
   return s

@@ -7,6 +7,10 @@ import SquareShape from '~/components/nodes/shapes/SquareShape.vue'
 import StarShape from '~/components/nodes/shapes/StarShape.vue'
 import TrapezoidShape from '~/components/nodes/shapes/TrapezoidShape.vue'
 import TriangleShape from '~/components/nodes/shapes/TriangleShape.vue'
+import StartEndBlock from '~/components/nodes/flowchart/StartEndBlock.vue'
+import ProcessBlock from '~/components/nodes/flowchart/ProcessBlock.vue'
+import InputOutputBlock from '~/components/nodes/flowchart/InputOutputBlock.vue'
+import DecisionBlock from '~/components/nodes/flowchart/DecisionBlock.vue'
 
 export interface ComponentTypeMeta {
   id: string
@@ -60,10 +64,10 @@ const categories: ComponentCategory[] = [
       },
     ],
   },
-  
+
   {
     id: 'shapes',
-    name: 'Фигуры', 
+    name: 'Фигуры',
     types: [
       {
         id: 'circle-shape',
@@ -143,11 +147,78 @@ const categories: ComponentCategory[] = [
           borderColor: '#dc2626',
         },
       },
-    ] 
+    ]
   },
 
   { id: 'uml', name: 'UML', types: [] },
-  { id: 'flowchart', name: 'Блок-схемы', types: [] },
+  {
+    id: 'flowchart',
+    name: 'Блок-схемы',
+    types: [
+      {
+        id: 'flowchart-start-end',
+        name: 'Начало/Конец',
+        component: StartEndBlock,
+        defaultWidth: 160,
+        defaultHeight: 80,
+        previewBg: '#f9fafb',
+        previewBorder: '#d1d5db',
+        defaultProps: {
+          content: 'Начало',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+          borderRadius: 100,
+        },
+      },
+      {
+        id: 'flowchart-process',
+        name: 'Процесс',
+        component: ProcessBlock,
+        defaultWidth: 160,
+        defaultHeight: 80,
+        previewBg: '#f9fafb',
+        previewBorder: '#d1d5db',
+        defaultProps: {
+          content: 'Процесс',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+          borderRadius: 0,
+        },
+      },
+      {
+        id: 'flowchart-input-output',
+        name: 'Ввод/Вывод',
+        component: InputOutputBlock,
+        defaultWidth: 160,
+        defaultHeight: 80,
+        previewBg: '#f9fafb',
+        previewBorder: '#d1d5db',
+        defaultProps: {
+          content: 'Ввод/Вывод',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'flowchart-decision',
+        name: 'Решение',
+        component: DecisionBlock,
+        defaultWidth: 160,
+        defaultHeight: 120,
+        previewBg: '#f9fafb',
+        previewBorder: '#d1d5db',
+        defaultProps: {
+          content: 'Условие?',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+    ]
+  },
   { id: 'other', name: 'Прочее', types: [] },
 ]
 
