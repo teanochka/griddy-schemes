@@ -149,6 +149,13 @@ function onSelectNode(node: Node, event?: MouseEvent) {
     // Force reactivity
     selectedNodeIds.value = new Set(selectedNodeIds.value)
   } else {
+    // If this node is already selected and multiple nodes are selected,
+    // don't change selection (allows dragging the group)
+    if (selectedNodeIds.value.size > 1 && selectedNodeIds.value.has(node.id)) {
+      // Keep current selection for group drag
+      return
+    }
+    
     // Regular click: clear and select this one
     selectedNodeIds.value = new Set([node.id])
   }
