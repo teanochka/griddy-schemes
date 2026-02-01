@@ -1,12 +1,11 @@
 <template>
   <div
-    class="w-full h-full p-2 flex items-center justify-center border border-gray-300"
-    :style="cardStyle"
+    class="w-full h-full p-4 flex items-center justify-center border border-gray-300"
+    :style="blockStyle"
   >
     <input
       ref="contentInput"
       type="text"
-      id="cardInput"
       class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
       :class="textAlignClass"
       :style="textStyle"
@@ -30,28 +29,30 @@ const emit = defineEmits<{
 
 const contentInput = ref<HTMLInputElement | null>(null)
 
-const cardStyle = computed(() => {
+const blockStyle = computed(() => {
   const s: Record<string, string> = {}
   
   // Background
   if (props.node.backgroundColor) {
     s.backgroundColor = props.node.backgroundColor
+  } else {
+    s.backgroundColor = '#ffffff'
   }
   
   // Border
   if (props.node.borderColor) {
     s.borderColor = props.node.borderColor
+  } else {
+    s.borderColor = '#6b7280'
   }
   if (props.node.borderWidth !== undefined) {
     s.borderWidth = `${props.node.borderWidth}px`
+  } else {
+    s.borderWidth = '1px'
   }
   
-  // Border radius
-  if (props.node.borderRadius !== undefined) {
-      s.borderRadius = `${props.node.borderRadius}px`
-  } else {
-    s.borderRadius = '8px' // Default
-  }
+  // Ellipse shape for use case
+  s.borderRadius = '50%'
   
   // Shadow
   if (props.node.shadowColor || props.node.shadowBlur) {

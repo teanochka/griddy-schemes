@@ -2,7 +2,7 @@
   <div
     ref="el"
     class="absolute cursor-move select-none transition-shadow duration-200
-           shadow-sm hover:shadow-md overflow-hidden
+           shadow-sm hover:shadow-md
            opacity-100 z-10 min-w-[50px] min-h-[50px]"
     :class="{
       'opacity-80 shadow-2xl z-50 cursor-grabbing': isDragging,

@@ -11,6 +11,14 @@ import StartEndBlock from '~/components/nodes/flowchart/StartEndBlock.vue'
 import ProcessBlock from '~/components/nodes/flowchart/ProcessBlock.vue'
 import InputOutputBlock from '~/components/nodes/flowchart/InputOutputBlock.vue'
 import DecisionBlock from '~/components/nodes/flowchart/DecisionBlock.vue'
+import ClassNode from '~/components/nodes/uml/ClassNode.vue'
+import InterfaceNode from '~/components/nodes/uml/InterfaceNode.vue'
+import UseCaseNode from '~/components/nodes/uml/UseCaseNode.vue'
+import ComponentNode from '~/components/nodes/uml/ComponentNode.vue'
+import NodeNode from '~/components/nodes/uml/NodeNode.vue'
+import StateNode from '~/components/nodes/uml/StateNode.vue'
+import PackageNode from '~/components/nodes/uml/PackageNode.vue'
+import NoteNode from '~/components/nodes/uml/NoteNode.vue'
 
 export interface ComponentTypeMeta {
   id: string
@@ -150,7 +158,134 @@ const categories: ComponentCategory[] = [
     ]
   },
 
-  { id: 'uml', name: 'UML', types: [] },
+  {
+    id: 'uml',
+    name: 'UML',
+    types: [
+      {
+        id: 'uml-class',
+        name: 'Класс',
+        component: ClassNode,
+        defaultWidth: 180,
+        defaultHeight: 160,
+        previewBg: '#f0f9ff',
+        previewBorder: '#0284c7',
+        defaultProps: {
+          content: 'ClassName',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'uml-interface',
+        name: 'Интерфейс',
+        component: InterfaceNode,
+        defaultWidth: 180,
+        defaultHeight: 140,
+        previewBg: '#f0fdf4',
+        previewBorder: '#10b981',
+        defaultProps: {
+          content: 'IInterface',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'uml-usecase',
+        name: 'Вариант использования',
+        component: UseCaseNode,
+        defaultWidth: 140,
+        defaultHeight: 90,
+        previewBg: '#fef3c7',
+        previewBorder: '#f59e0b',
+        defaultProps: {
+          content: 'Use Case',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'uml-component',
+        name: 'Компонент',
+        component: ComponentNode,
+        defaultWidth: 160,
+        defaultHeight: 100,
+        previewBg: '#f3e8ff',
+        previewBorder: '#8b5cf6',
+        defaultProps: {
+          content: 'Component',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'uml-node',
+        name: 'Узел',
+        component: NodeNode,
+        defaultWidth: 150,
+        defaultHeight: 100,
+        previewBg: '#e0e7ff',
+        previewBorder: '#6366f1',
+        defaultProps: {
+          content: 'Node',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'uml-state',
+        name: 'Состояние',
+        component: StateNode,
+        defaultWidth: 140,
+        defaultHeight: 70,
+        previewBg: '#fce7f3',
+        previewBorder: '#ec4899',
+        defaultProps: {
+          content: 'State',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+          borderRadius: 20,
+        },
+      },
+      {
+        id: 'uml-package',
+        name: 'Пакет',
+        component: PackageNode,
+        defaultWidth: 180,
+        defaultHeight: 140,
+        previewBg: '#fef9c3',
+        previewBorder: '#eab308',
+        defaultProps: {
+          content: 'Package',
+          backgroundColor: '#ffffff',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+        },
+      },
+      {
+        id: 'uml-note',
+        name: 'Заметка',
+        component: NoteNode,
+        defaultWidth: 160,
+        defaultHeight: 120,
+        previewBg: '#fffacd',
+        previewBorder: '#d4af37',
+        defaultProps: {
+          content: 'Note...',
+          backgroundColor: '#fffacd',
+          borderColor: '#6b7280',
+          borderWidth: 1,
+          textAlign: 'left',
+        },
+      },
+    ]
+  },
   {
     id: 'flowchart',
     name: 'Блок-схемы',

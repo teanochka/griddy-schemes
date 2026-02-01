@@ -1,18 +1,25 @@
 <template>
   <div
-    class="w-full h-full p-2 flex items-center justify-center border border-gray-300"
-    :style="cardStyle"
-  >
-    <input
-      ref="contentInput"
-      type="text"
-      id="cardInput"
-      class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center"
-      :class="textAlignClass"
-      :style="textStyle"
-      :value="node.content"
-      @input="onInput"
-    />
+    class="w-full h-full flex flex-col border border-gray-300"
+    :style="blockStyle"
+  > 
+    <!-- Interface Name Section -->
+    <div class="flex-none p-2 border-b border-t" :style="{ borderColor: borderColorValue }">
+      <input
+        ref="contentInput"
+        type="text"
+        class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center font-semibold"
+        :class="textAlignClass"
+        :style="textStyle"
+        :value="node.content"
+        @input="onInput"
+      />
+    </div>
+    
+    <!-- Methods Section -->
+    <div class="flex-1 p-2 text-sm">
+      <div class="text-gray-600">+ method(): Type</div>
+    </div>
   </div>
 </template>
 
@@ -30,27 +37,39 @@ const emit = defineEmits<{
 
 const contentInput = ref<HTMLInputElement | null>(null)
 
-const cardStyle = computed(() => {
+const borderColorValue = computed(() => props.node.borderColor ?? '#6b7280')
+
+const blockStyle = computed(() => {
   const s: Record<string, string> = {}
   
   // Background
   if (props.node.backgroundColor) {
     s.backgroundColor = props.node.backgroundColor
+  } else {
+    s.backgroundColor = '#ffffff'
   }
   
   // Border
   if (props.node.borderColor) {
     s.borderColor = props.node.borderColor
+  } else {
+    s.borderColor = '#6b7280'
   }
   if (props.node.borderWidth !== undefined) {
     s.borderWidth = `${props.node.borderWidth}px`
+  } else {
+    s.borderWidth = '1px'
   }
   
   // Border radius
   if (props.node.borderRadius !== undefined) {
+    if (typeof props.node.borderRadius === 'string') {
+      s.borderRadius = props.node.borderRadius
+    } else {
       s.borderRadius = `${props.node.borderRadius}px`
+    }
   } else {
-    s.borderRadius = '8px' // Default
+    s.borderRadius = '0px'
   }
   
   // Shadow
