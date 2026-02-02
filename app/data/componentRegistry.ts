@@ -175,6 +175,11 @@ const categories: ComponentCategory[] = [
           backgroundColor: '#ffffff',
           borderColor: '#6b7280',
           borderWidth: 1,
+          fields: [
+            { id: 'className', value: 'ClassName' },
+            { id: 'attributes', value: '+ attribute: Type' },
+            { id: 'methods', value: '+ method(): Type' },
+          ],
         },
       },
       {

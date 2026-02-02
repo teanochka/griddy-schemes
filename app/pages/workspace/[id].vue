@@ -135,6 +135,11 @@ function onContentUpdate(node: Node, value: string) {
   syncCards()
 }
 
+function onFieldsUpdate(node: Node, fields: Array<{ id: string; value: string }>) {
+  node.fields = fields
+  syncCards()
+}
+
 function onSelectNode(node: Node, event?: MouseEvent) {
   const isCtrl = event?.ctrlKey || event?.metaKey
   const isShift = event?.shiftKey
@@ -432,6 +437,7 @@ onUnmounted(() => {
           @update:position="onPositionUpdate"
           @update:size="onSizeUpdate"
           @update:content="(v) => onContentUpdate(node, v)"
+          @update:fields="(v) => onFieldsUpdate(node, v)"
           @select="(e) => onSelectNode(node, e)"
           @delete="onDeleteNode(node.id)"
         />

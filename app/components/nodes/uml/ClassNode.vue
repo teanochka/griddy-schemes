@@ -5,25 +5,38 @@
   >
     <!-- Class Name Section -->
     <div class="flex-none p-2 border-b" :style="{ borderColor: borderColorValue }">
-      <input
-        ref="contentInput"
-        type="text"
-        class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center font-semibold"
+      <textarea
+        ref="classNameInput"
+        class="text-gray-700 w-full min-w-0 bg-transparent border-none outline-none focus:ring-0 text-center font-semibold resize-none overflow-hidden"
         :class="textAlignClass"
         :style="textStyle"
-        :value="node.content"
-        @input="onInput"
+        :value="classNameField?.value || 'ClassName'"
+        rows="1"
+        @input="onFieldInput('className', $event)"
+        @keydown.enter.prevent="onEnter('className')"
       />
     </div>
     
     <!-- Attributes Section -->
     <div class="flex-1 p-2 border-b text-sm" :style="{ borderColor: borderColorValue }">
-      <div class="text-gray-600">+ attribute: Type</div>
+      <textarea
+        ref="attributesInput"
+        class="text-gray-600 w-full h-full min-w-0 bg-transparent border-none outline-none focus:ring-0 resize-none"
+        :style="textStyle"
+        :value="attributesField?.value || '+ attribute: Type'"
+        @input="onFieldInput('attributes', $event)"
+      />
     </div>
     
     <!-- Methods Section -->
     <div class="flex-1 p-2 text-sm">
-      <div class="text-gray-600">+ method(): Type</div>
+      <textarea
+        ref="methodsInput"
+        class="text-gray-600 w-full h-full min-w-0 bg-transparent border-none outline-none focus:ring-0 resize-none"
+        :style="textStyle"
+        :value="methodsField?.value || '+ method(): Type'"
+        @input="onFieldInput('methods', $event)"
+      />
     </div>
   </div>
 </template>
@@ -38,11 +51,26 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:content': [value: string]
+  'update:fields': [fields: Array<{ id: string; value: string }>]
 }>()
 
-const contentInput = ref<HTMLInputElement | null>(null)
+const classNameInput = ref<HTMLTextAreaElement | null>(null)
+const attributesInput = ref<HTMLTextAreaElement | null>(null)
+const methodsInput = ref<HTMLTextAreaElement | null>(null)
 
 const borderColorValue = computed(() => props.node.borderColor ?? '#6b7280')
+
+const classNameField = computed(() => {
+  return props.node.fields?.find(f => f.id === 'className')
+})
+
+const attributesField = computed(() => {
+  return props.node.fields?.find(f => f.id === 'attributes')
+})
+
+const methodsField = computed(() => {
+  return props.node.fields?.find(f => f.id === 'methods')
+})
 
 const blockStyle = computed(() => {
   const s: Record<string, string> = {}
@@ -102,8 +130,31 @@ const textStyle = computed(() => {
   return s
 })
 
-function onInput(e: Event) {
-  const t = (e.target as HTMLInputElement).value
-  emit('update:content', t)
+function onFieldInput(fieldId: string, e: Event) {
+  const value = (e.target as HTMLTextAreaElement).value
+  const currentFields = props.node.fields || []
+  const existingFieldIndex = currentFields.findIndex(f => f.id === fieldId)
+  
+  let updatedFields: Array<{ id: string; value: string }>
+  if (existingFieldIndex >= 0) {
+    updatedFields = [...currentFields]
+    updatedFields[existingFieldIndex] = { id: fieldId, value }
+  } else {
+    updatedFields = [...currentFields, { id: fieldId, value }]
+  }
+  
+  emit('update:fields', updatedFields)
 }
+
+function onEnter(fieldId: string) {
+  if (fieldId === 'className') {
+    attributesInput.value?.focus()
+  }
+}
+
+defineExpose({
+  classNameInput,
+  attributesInput,
+  methodsInput,
+})
 </script>

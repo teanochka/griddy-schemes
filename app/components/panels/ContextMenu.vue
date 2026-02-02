@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="node"
-    class="fixed right-6 top-20 w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-30"
+    class="fixed right-64 top-20 w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-30"
     style="max-height: calc(100vh - 120px);"
     @mousedown.stop
   >

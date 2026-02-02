@@ -23,8 +23,10 @@
       <component
         :is="component"
         v-if="component"
+        ref="nodeComponent"
         :node="node"
         @update:content="(v) => $emit('update:content', v)"
+        @update:fields="(v) => $emit('update:fields', v)"
       />
       <div
         v-else
@@ -56,11 +58,13 @@ const emit = defineEmits<{
   'update:position': [id: number | string, x: number, y: number]
   'update:size': [id: number | string, w: number, h: number]
   'update:content': [value: string]
+  'update:fields': [fields: Array<{ id: string; value: string }>]
   select: [event?: MouseEvent]
   delete: []
 }>()
 
 const el = ref<HTMLElement | null>(null)
+const nodeComponent = ref<any>(null)
 const isDragging = ref(false)
 const isResizing = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
@@ -123,10 +127,35 @@ function startResize(e: MouseEvent) {
 
 function handleDoubleClick(e:MouseEvent) {
   emit('select', e)
-  const input = el.value?.querySelector('input')
-  if (input) {
-    input.focus()
-    input.select()
+  
+  // Check if the user clicked directly on an input or textarea
+  const target = e.target as HTMLElement
+  const clickedInput = target.closest('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null
+  
+  if (clickedInput) {
+    // Focus the specific field that was clicked
+    clickedInput.focus()
+    clickedInput.select()
+  } else {
+    // Fall back to first available field if they clicked elsewhere on the node
+    const input = el.value?.querySelector('input')
+    const textarea = el.value?.querySelector('textarea')
+    
+    if (input) {
+      input.focus()
+      input.select()
+    } else if (textarea) {
+      textarea.focus()
+      textarea.select()
+    } else if (nodeComponent.value) {
+      const firstField = nodeComponent.value.classNameInput || 
+                         nodeComponent.value.attributesInput || 
+                         nodeComponent.value.methodsInput
+      if (firstField) {
+        firstField.focus()
+        firstField.select()
+      }
+    }
   }
 }
 

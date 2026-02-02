@@ -17,6 +17,8 @@ export interface Node {
   content?: string
   /** image-block */
   src?: string
+  /** Multiple editable fields for advanced nodes like UML classes */
+  fields?: Array<{ id: string; value: string }>
 
   // Fill & Stroke
   /** Заливка */
