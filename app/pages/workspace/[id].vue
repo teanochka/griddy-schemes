@@ -13,6 +13,7 @@ import { useApi } from '@/composables/useApi'
 import { createNode } from '@/types/node'
 import { componentRegistry } from '@/data/componentRegistry'
 import type { Node } from '@/types/node'
+import { useClipboard } from '@/composables/useClipboard'
 
 const router = useRouter()
 const route = useRoute()
@@ -49,7 +50,8 @@ const marqueeRect = computed(() => {
 })
 
 // Clipboard for copy/paste
-const clipboard = ref<Node[]>([])
+// Clipboard for copy/paste
+const { copy, paste } = useClipboard()
 
 
 const handleRemoteUpdate = (remoteCards: Node[]) => {
@@ -298,20 +300,18 @@ function handleKeyDown(e: KeyboardEvent) {
   const isCtrl = e.ctrlKey || e.metaKey
 
   // Copy (Ctrl+C)
-  if (isCtrl && e.key === 'c') {
+  if (isCtrl && e.code === 'KeyC') {
     if (selectedNodeIds.value.size > 0) {
       e.preventDefault()
-      // Deep copy selected nodes
-      clipboard.value = selectedNodes.value.map(node => ({ ...node }))
+      copy(selectedNodes.value)
     }
   }
 
   // Cut (Ctrl+X)
-  if (isCtrl && e.key === 'x') {
+  if (isCtrl && e.code === 'KeyX') {
     if (selectedNodeIds.value.size > 0) {
       e.preventDefault()
-      // Copy to clipboard
-      clipboard.value = selectedNodes.value.map(node => ({ ...node }))
+      copy(selectedNodes.value)
       // Delete original nodes
       nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
       selectedNodeIds.value = new Set()
@@ -320,29 +320,16 @@ function handleKeyDown(e: KeyboardEvent) {
   }
 
   // Paste (Ctrl+V)
-  if (isCtrl && e.key === 'v') {
-    if (clipboard.value.length > 0) {
-      e.preventDefault()
-      const newNodes: Node[] = []
-      const newIds = new Set<number | string>()
-
-      clipboard.value.forEach(node => {
-        // Generate unique ID
-        const newId = Date.now() + Math.random() * 1000
-        const newNode = {
-          ...node,
-          id: newId,
-          x: node.x + 20, // Offset by 20px
-          y: node.y + 20,
-        }
-        newNodes.push(newNode)
-        newIds.add(newId)
-      })
-
-      nodes.value.push(...newNodes)
-      selectedNodeIds.value = newIds
-      syncCards()
-    }
+  if (isCtrl && e.code === 'KeyV') {
+    e.preventDefault()
+    paste().then((newNodes) => {
+      if (newNodes.length > 0) {
+        nodes.value.push(...newNodes)
+        // Select the pasted nodes
+        selectedNodeIds.value = new Set(newNodes.map(n => n.id))
+        syncCards()
+      }
+    })
   }
 
   // Delete on Delete or Backspace
