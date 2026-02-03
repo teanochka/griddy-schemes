@@ -47,6 +47,54 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = auth.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer", "user_id": user.id, "nickname": user.nickname}
 
+@app.post("/google-login")
+async def google_login(login_data: schemas.GoogleLogin, db: Session = Depends(get_db)):
+    try:
+        import requests
+        
+        # Verify the token via Google UserInfo endpoint (since frontend sends access_token)
+        response = requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {login_data.token}"}
+        )
+        
+        if response.status_code != 200:
+             raise HTTPException(status_code=400, detail="Invalid Google token")
+             
+        user_info = response.json()
+        email = user_info.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Google token does not contain email")
+
+        # Check if user exists
+        user = db.query(models.User).filter(models.User.email == email).first()
+        
+        if not user:
+            # Create new user
+            nickname = email.split("@")[0]
+            # Ensure unique nickname by appending uuid if needed
+            if db.query(models.User).filter(models.User.nickname == nickname).first():
+                nickname = f"{nickname}_{uuid.uuid4().hex[:4]}"
+                
+            # Create a random password since they use Google
+            random_password = uuid.uuid4().hex
+            hashed_password = auth.get_password_hash(random_password)
+            
+            user = models.User(email=email, nickname=nickname, hashed_password=hashed_password)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        access_token = auth.create_access_token(data={"sub": user.email})
+        return {"access_token": access_token, "token_type": "bearer", "user_id": user.id, "nickname": user.nickname}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Google Login Error: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error during Google Login")
+
 @app.post("/register", response_model=schemas.UserDisplay)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter((models.User.email == user.email) | (models.User.nickname == user.nickname)).first()

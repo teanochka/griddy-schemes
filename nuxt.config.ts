@@ -5,10 +5,15 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   nitro: {
     routeRules: {
-      '/api/**': { 
-        proxy: 'http://127.0.0.1:8000/**', 
-        cors: true 
+      '/api/**': {
+        proxy: 'http://127.0.0.1:8000/**',
+        cors: true
       },
     },
   },
+  runtimeConfig: {
+    public: {
+      googleClientId: ''
+    }
+  }
 })
