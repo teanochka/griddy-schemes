@@ -11,6 +11,14 @@ import aiofiles
 
 from database import engine, Base, get_db
 import models, schemas, auth
+import asyncio
+
+project_locks: Dict[str, asyncio.Lock] = {}
+
+def get_project_lock(project_id: str) -> asyncio.Lock:
+    if project_id not in project_locks:
+        project_locks[project_id] = asyncio.Lock()
+    return project_locks[project_id]
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -183,22 +191,25 @@ async def websocket_endpoint(
         filename = os.path.basename(project.json_path)
         filepath = os.path.join(STORAGE_DIR, filename)
         
-        if os.path.exists(filepath):
-            async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
-                content = await f.read()
-                data = json.loads(content)
-                cards = data.get("cards", [])
-                
-                await websocket.send_json({
-                    "type": "update_cards",
-                    "data": cards
-                })
-        else:
-             await websocket.send_json({
-                    "type": "update_cards",
-                    "data": []
-                })
+        lock = get_project_lock(project_id)
+        async with lock:
+            if os.path.exists(filepath):
+                async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
+                    content = await f.read()
+                    data = json.loads(content)
+                    cards = data.get("cards", [])
+                    
+                    await websocket.send_json({
+                        "type": "update_cards",
+                        "data": cards
+                    })
+            else:
+                 await websocket.send_json({
+                        "type": "update_cards",
+                        "data": []
+                    })
     except Exception as e:
+        print(f"WS Load Error: {e}")
         pass
 
     try:
@@ -221,10 +232,13 @@ async def websocket_endpoint(
                     filepath = os.path.join(STORAGE_DIR, filename)
                     
                     try:
-                        async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
-                            await f.write(json.dumps({"cards": cards}))
+                        lock = get_project_lock(project_id)
+                        async with lock:
+                            async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
+                                await f.write(json.dumps({"cards": cards}))
                     except Exception as e:
-                        pass
+                         print(f"WS Save Error: {e}")
+                         pass
                 
                 await manager.broadcast({
                     "user": user_nickname,
