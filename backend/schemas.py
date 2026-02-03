@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import List, Optional, Any, Dict
+import uuid
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -28,7 +29,7 @@ class ProjectCreate(ProjectBase):
     initial_data: Optional[Dict[str, Any]] = None 
 
 class ProjectDisplay(ProjectBase):
-    id: int
+    id: str
     created_at: datetime
     owner: UserDisplay
     allowed_users: List[UserDisplay] = []

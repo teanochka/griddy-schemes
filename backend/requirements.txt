@@ -2,9 +2,10 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-passlib[argon2]
 python-multipart
 python-jose
 aiofiles
-dotenv
+python-dotenv
+passlib[argon2] 
+argon2-cffi
 websockets
