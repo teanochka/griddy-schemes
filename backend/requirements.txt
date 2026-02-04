@@ -9,3 +9,5 @@ python-dotenv
 passlib[argon2] 
 argon2-cffi
 websockets
+google-auth
+requests

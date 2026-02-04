@@ -39,3 +39,6 @@ class ProjectDisplay(ProjectBase):
 
 class AddUserToProject(BaseModel):
     email_or_nickname: str
+
+class GoogleLogin(BaseModel):
+    token: str

@@ -92,9 +92,11 @@
 </template>
 
 <script setup>
+import { googleTokenLogin } from 'vue3-google-login'
+
 const email = ref('')
 const password = ref('')
-const { login } = useAuth()
+const { login, googleLogin } = useAuth()
 const router = useRouter()
 
 const handleLogin = async () => {
@@ -103,6 +105,19 @@ const handleLogin = async () => {
     router.push('/')
   } else {
     alert('Ошибка входа')
+  }
+}
+
+const handleGoogleSignIn = async () => {
+  try {
+    const response = await googleTokenLogin()
+    // response has access_token
+    const success = await googleLogin(response.access_token)
+    if (success) {
+      router.push('/')
+    }
+  } catch (e) {
+    console.error("Google Sign In Failed", e)
   }
 }
 </script>

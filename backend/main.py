@@ -11,6 +11,14 @@ import aiofiles
 
 from database import engine, Base, get_db
 import models, schemas, auth
+import asyncio
+
+project_locks: Dict[str, asyncio.Lock] = {}
+
+def get_project_lock(project_id: str) -> asyncio.Lock:
+    if project_id not in project_locks:
+        project_locks[project_id] = asyncio.Lock()
+    return project_locks[project_id]
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -38,6 +46,54 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token = auth.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer", "user_id": user.id, "nickname": user.nickname}
+
+@app.post("/google-login")
+async def google_login(login_data: schemas.GoogleLogin, db: Session = Depends(get_db)):
+    try:
+        import requests
+        
+        # Verify the token via Google UserInfo endpoint (since frontend sends access_token)
+        response = requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {login_data.token}"}
+        )
+        
+        if response.status_code != 200:
+             raise HTTPException(status_code=400, detail="Invalid Google token")
+             
+        user_info = response.json()
+        email = user_info.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Google token does not contain email")
+
+        # Check if user exists
+        user = db.query(models.User).filter(models.User.email == email).first()
+        
+        if not user:
+            # Create new user
+            nickname = email.split("@")[0]
+            # Ensure unique nickname by appending uuid if needed
+            if db.query(models.User).filter(models.User.nickname == nickname).first():
+                nickname = f"{nickname}_{uuid.uuid4().hex[:4]}"
+                
+            # Create a random password since they use Google
+            random_password = uuid.uuid4().hex
+            hashed_password = auth.get_password_hash(random_password)
+            
+            user = models.User(email=email, nickname=nickname, hashed_password=hashed_password)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        access_token = auth.create_access_token(data={"sub": user.email})
+        return {"access_token": access_token, "token_type": "bearer", "user_id": user.id, "nickname": user.nickname}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Google Login Error: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error during Google Login")
 
 @app.post("/register", response_model=schemas.UserDisplay)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -183,22 +239,25 @@ async def websocket_endpoint(
         filename = os.path.basename(project.json_path)
         filepath = os.path.join(STORAGE_DIR, filename)
         
-        if os.path.exists(filepath):
-            async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
-                content = await f.read()
-                data = json.loads(content)
-                cards = data.get("cards", [])
-                
-                await websocket.send_json({
-                    "type": "update_cards",
-                    "data": cards
-                })
-        else:
-             await websocket.send_json({
-                    "type": "update_cards",
-                    "data": []
-                })
+        lock = get_project_lock(project_id)
+        async with lock:
+            if os.path.exists(filepath):
+                async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
+                    content = await f.read()
+                    data = json.loads(content)
+                    cards = data.get("cards", [])
+                    
+                    await websocket.send_json({
+                        "type": "update_cards",
+                        "data": cards
+                    })
+            else:
+                 await websocket.send_json({
+                        "type": "update_cards",
+                        "data": []
+                    })
     except Exception as e:
+        print(f"WS Load Error: {e}")
         pass
 
     try:
@@ -221,10 +280,13 @@ async def websocket_endpoint(
                     filepath = os.path.join(STORAGE_DIR, filename)
                     
                     try:
-                        async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
-                            await f.write(json.dumps({"cards": cards}))
+                        lock = get_project_lock(project_id)
+                        async with lock:
+                            async with aiofiles.open(filepath, mode='w', encoding='utf-8') as f:
+                                await f.write(json.dumps({"cards": cards}))
                     except Exception as e:
-                        pass
+                         print(f"WS Save Error: {e}")
+                         pass
                 
                 await manager.broadcast({
                     "user": user_nickname,
