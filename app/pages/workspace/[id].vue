@@ -145,13 +145,38 @@ function onFieldsUpdate(node: Node, fields: Array<{ id: string; value: string }>
   syncCards()
 }
 
-function onParentUpdate(id: number | string, parentId: number | string | null, relX: number, relY: number) {
+function onParentUpdate(id: number | string, parentId: number | string | null, insertIndex: number) {
   const node = nodes.value.find((n) => n.id === id)
   if (!node) return
   
+  // Set the parent
   node.parentId = parentId
-  node.x = relX
-  node.y = relY
+  
+  // If inserting into a container, reorder to achieve proper insertion index
+  if (parentId !== null) {
+    // Get current children of the container (excluding the node being moved)
+    const siblings = nodes.value.filter(n => n.parentId === parentId && n.id !== id)
+    
+    // Remove node from current position in array
+    const nodeIdx = nodes.value.findIndex(n => n.id === id)
+    if (nodeIdx !== -1) {
+      nodes.value.splice(nodeIdx, 1)
+    }
+    
+    // Find where to insert based on sibling positions
+    // Children order in nodes array determines render order
+    let insertPosition = nodes.value.length
+    if (siblings.length > 0 && insertIndex < siblings.length) {
+      const targetSibling = siblings[insertIndex]
+      insertPosition = nodes.value.findIndex(n => n.id === targetSibling.id)
+    } else if (siblings.length > 0) {
+      // Insert after the last sibling
+      const lastSibling = siblings[siblings.length - 1]
+      insertPosition = nodes.value.findIndex(n => n.id === lastSibling.id) + 1
+    }
+    
+    nodes.value.splice(insertPosition, 0, node)
+  }
   
   syncCards()
 }
@@ -180,6 +205,67 @@ function onSelectNode(node: Node, event?: MouseEvent) {
     // Regular click: clear and select this one
     selectedNodeIds.value = new Set([node.id])
   }
+}
+
+function onSelectChildNode(childId: number | string, event: MouseEvent) {
+  const child = nodes.value.find(n => n.id === childId)
+  if (child) {
+    onSelectNode(child, event)
+  }
+}
+
+function onReorderChildren(containerId: number | string, fromIndex: number, toIndex: number) {
+  // Get all children of this container in current order
+  const siblings = nodes.value.filter(n => n.parentId === containerId)
+  
+  if (fromIndex < 0 || fromIndex >= siblings.length || toIndex < 0 || toIndex >= siblings.length) {
+    return
+  }
+  
+  const movedNode = siblings[fromIndex]
+  const targetNode = siblings[toIndex]
+  
+  // Find their indices in the global nodes array
+  const globalMovedIdx = nodes.value.findIndex(n => n.id === movedNode.id)
+  
+  if (globalMovedIdx === -1) return
+  
+  // Remove from old position
+  nodes.value.splice(globalMovedIdx, 1)
+  
+  // Find where to insert
+  // We need to find the global index of the target node
+  // If we're moving down (from < to), we want to be AFTER the target
+  // If we're moving up (from > to), we want to be BEFORE the target
+  // BUT since we already removed the node, the target's index might have shifted if it was after the moved node
+  const globalTargetIdx = nodes.value.findIndex(n => n.id === targetNode.id)
+  
+  // Insert at the new position
+  // If moving down, toIndex > fromIndex. In siblings array, we want to be at toIndex.
+  // Since we removed the node, the target node is now at the position we want to be (if moving up) 
+  // or before the position we want (if moving down? wait).
+  
+  // Simpler logic:
+  // We want to insert 'movedNode' such that it ends up at 'toIndex' in the siblings array.
+  // The 'siblings' array we got earlier is the OLD order.
+  // Let's re-calculate insertion point based on the remaining nodes in global array.
+  
+  let insertPos = globalTargetIdx
+  if (fromIndex < toIndex) {
+    // Moving down. Target is now logically "before" where we want to be?
+    // Example: [A, B, C]. Move A(0) to C(2). ToIndex=2. Target=C.
+    // Remove A. Nodes: [B, C]. Target C is at index 1.
+    // We want A to be after C. So insert at TargetIdx + 1.
+    insertPos = globalTargetIdx + 1
+  } else {
+    // Moving up. Example: [A, B, C]. Move C(2) to A(0). ToIndex=0. Target=A.
+    // Remove C. Nodes: [A, B]. Target A is at index 0.
+    // We want C to be before A. So insert at TargetIdx.
+    insertPos = globalTargetIdx
+  }
+  
+  nodes.value.splice(insertPos, 0, movedNode)
+  syncCards()
 }
 
 function onWorkspaceMousedown(e: MouseEvent) {
@@ -443,6 +529,8 @@ onUnmounted(() => {
           @update:fields="(v) => onFieldsUpdate(node, v)"
           @update:parent="onParentUpdate"
           @select="(e) => onSelectNode(node, e)"
+          @select-child="onSelectChildNode"
+          @reorder-children="onReorderChildren"
           @delete="onDeleteNode(node.id)"
         />
 

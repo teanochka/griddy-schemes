@@ -169,6 +169,46 @@
           </div>
         </div>
       </PropertySection>
+
+      <!-- Flex Container Settings -->
+      <PropertySection v-if="isFlexContainer" title="Контейнер">
+        <PropertyButtonGroup
+          label="Направление"
+          :value="node.flexDirection ?? 'column'"
+          :options="[
+            { value: 'column', icon: 'arrow-down', title: 'Вертикально' },
+            { value: 'row', icon: 'arrow-right', title: 'Горизонтально' }
+          ]"
+          @update="(v) => updateProp('flexDirection', v)"
+        />
+        <PropertySlider
+          label="Отступ"
+          :value="node.flexGap ?? 8"
+          :min="0"
+          :max="50"
+          suffix="px"
+          @update="(v) => updateProp('flexGap', v)"
+        />
+        <PropertySlider
+          label="Внутренний отступ"
+          :value="node.flexPadding ?? 16"
+          :min="0"
+          :max="50"
+          suffix="px"
+          @update="(v) => updateProp('flexPadding', v)"
+        />
+        <PropertyButtonGroup
+          label="Растяжение детей"
+          :value="node.flexChildStretch ?? 'none'"
+          :options="[
+            { value: 'none', icon: 'minimize', title: 'Без растяжения' },
+            { value: 'horizontal', icon: 'arrows-alt-h', title: 'По горизонтали' },
+            { value: 'vertical', icon: 'arrows-alt-v', title: 'По вертикали' },
+            { value: 'both', icon: 'expand', title: 'Оба направления' }
+          ]"
+          @update="(v) => updateProp('flexChildStretch', v)"
+        />
+      </PropertySection>
     </div>
   </div>
 </template>
@@ -176,6 +216,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Node } from '@/types/node'
+import { isContainer } from '@/types/node'
 import PropertySection from './properties/PropertySection.vue'
 import PropertyInput from './properties/PropertyInput.vue'
 import PropertySlider from './properties/PropertySlider.vue'
@@ -202,6 +243,10 @@ const hasShadow = computed(() => {
     props.node?.shadowOffsetX !== undefined ||
     props.node?.shadowOffsetY !== undefined
   )
+})
+
+const isFlexContainer = computed(() => {
+  return props.node ? isContainer(props.node) : false
 })
 
 function updateProp(key: string, value: any) {

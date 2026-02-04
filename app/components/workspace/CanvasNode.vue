@@ -22,48 +22,19 @@
     @dblclick.stop="handleDoubleClick"
   >
     <div class="w-full h-full relative">
-      <!-- Container node: render with children -->
+      <!-- Container node: use dedicated renderer -->
       <template v-if="isContainerNode">
-        <div
-          class="w-full h-full rounded-lg border-2 border-dashed border-gray-400 bg-gray-50/80 flex flex-col relative overflow-hidden"
-          :class="{ 'border-blue-500 bg-blue-50/50': isHoveredContainer }"
-        >
-          <span class="text-xs text-gray-500 p-2 self-center shrink-0">Контейнер</span>
-          
-          <!-- Children area -->
-          <div class="flex-1 relative">
-            <!-- Ghost placeholder when hovering -->
-            <div
-              v-if="isHoveredContainer && ghostRect"
-              class="absolute border-2 border-dashed border-blue-500 bg-blue-100/30 rounded-lg pointer-events-none"
-              :style="{
-                left: `${ghostRect.x}px`,
-                top: `${ghostRect.y}px`,
-                width: `${ghostRect.width}px`,
-                height: `${ghostRect.height}px`,
-              }"
-            />
-            
-            <!-- Child nodes -->
-            <CanvasNode
-              v-for="child in childNodes"
-              :key="child.id"
-              class="canvas-node"
-              :node="child"
-              :all-nodes="allNodes"
-              :workspace-ref="workspaceRef"
-              :selected="selectedNodeIds?.has(child.id) ?? false"
-              :selected-node-ids="selectedNodeIds"
-              @update:position="(id, x, y) => $emit('update:position', id, x, y)"
-              @update:size="(id, w, h) => $emit('update:size', id, w, h)"
-              @update:content="(v) => $emit('update:content', v)"
-              @update:fields="(v) => $emit('update:fields', v)"
-              @update:parent="(id, parentId, relX, relY) => $emit('update:parent', id, parentId, relX, relY)"
-              @select="(e) => $emit('select', e)"
-              @delete="$emit('delete')"
-            />
-          </div>
-        </div>
+        <FlexContainerRenderer
+          ref="containerRenderer"
+          :node="node"
+          :children="childNodes"
+          :selected-node-ids="selectedNodeIds"
+          :is-hovered="isHoveredContainer"
+          @select-child="onSelectChild"
+          @reorder-children="onReorderChildren"
+          @update:content="(v) => $emit('update:content', v)"
+          @update:fields="(v) => $emit('update:fields', v)"
+        />
       </template>
       
       <!-- Non-container node: render component -->
@@ -99,7 +70,8 @@ import { ref, computed } from 'vue'
 import type { Node } from '@/types/node'
 import { isContainer, getChildren } from '@/types/node'
 import { componentRegistry } from '@/data/componentRegistry'
-import { hoveredContainerId, ghostRect, updateContainerHover, clearContainerHover } from '@/composables/useContainerDrop'
+import { hoveredContainerId, updateContainerHover, clearContainerHover, dropIndex } from '@/composables/useContainerDrop'
+import FlexContainerRenderer from './FlexContainerRenderer.vue'
 
 const props = defineProps<{
   node: Node
@@ -114,13 +86,16 @@ const emit = defineEmits<{
   'update:size': [id: number | string, w: number, h: number]
   'update:content': [value: string]
   'update:fields': [fields: Array<{ id: string; value: string }>]
-  'update:parent': [id: number | string, parentId: number | string | null, relX: number, relY: number]
-  select: [event?: MouseEvent]
-  delete: []
+  'update:parent': [id: number | string, parentId: number | string | null, insertIndex: number]
+  'select': [event?: MouseEvent]
+  'select-child': [childId: number | string, event: MouseEvent]
+  'reorder-children': [containerId: number | string, fromIndex: number, toIndex: number]
+  'delete': []
 }>()
 
 const el = ref<HTMLElement | null>()
 const nodeComponent = ref<any>(null)
+const containerRenderer = ref<InstanceType<typeof FlexContainerRenderer> | null>(null)
 const isDragging = ref(false)
 const isResizing = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
@@ -133,6 +108,16 @@ const childNodes = computed(() => {
   if (!props.allNodes || !isContainerNode.value) return []
   return getChildren(props.allNodes, props.node.id)
 })
+
+function onSelectChild(id: number | string, event: MouseEvent) {
+  // Emit the child selection event so workspace can select the child node
+  emit('select-child', id, event)
+}
+
+function onReorderChildren(fromIndex: number, toIndex: number) {
+  // Emit the reorder event with container ID
+  emit('reorder-children', props.node.id, fromIndex, toIndex)
+}
 
 function onMouseDown(e: MouseEvent) {
   emit('select', e)
@@ -178,8 +163,10 @@ function onDragUp(e: MouseEvent) {
   // Check if we should parent to a container
   if (hoveredContainerId.value && !isContainerNode.value) {
     const container = props.allNodes?.find(n => n.id === hoveredContainerId.value)
-    if (container && ghostRect.value) {
-      emit('update:parent', props.node.id, container.id, ghostRect.value.x, ghostRect.value.y)
+    if (container) {
+      // Get the drop index from the FlexContainerRenderer
+      const insertIdx = dropIndex.value
+      emit('update:parent', props.node.id, container.id, insertIdx)
     }
   }
   

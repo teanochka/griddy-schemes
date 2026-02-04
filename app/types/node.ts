@@ -52,6 +52,20 @@ export interface Node {
   /** Смещение тени по Y */
   shadowOffsetY?: number
 
+  // Flex Container Properties
+  /** Flex direction: row or column */
+  flexDirection?: 'row' | 'column'
+  /** Gap between flex children (px) */
+  flexGap?: number
+  /** Justify content alignment */
+  justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around'
+  /** Align items */
+  alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch'
+  /** Padding inside container (px) */
+  flexPadding?: number
+  /** How to stretch children: none, horizontal, vertical, or both */
+  flexChildStretch?: 'none' | 'horizontal' | 'vertical' | 'both'
+
   /** Совместимость со старыми карточками */
   style?: Record<string, string>
   [key: string]: unknown

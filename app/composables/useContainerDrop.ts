@@ -7,6 +7,7 @@ import { isContainer } from '@/types/node'
  */
 export const hoveredContainerId = ref<number | string | null>(null)
 export const ghostRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
+export const dropIndex = ref<number>(0)
 
 /**
  * Check if a point is inside a container's bounds
@@ -102,4 +103,5 @@ export function updateContainerHover(
 export function clearContainerHover() {
     hoveredContainerId.value = null
     ghostRect.value = null
+    dropIndex.value = 0
 }
