@@ -10,7 +10,7 @@ import { isDragging, dragType, dragSource, endDrag } from '@/composables/useDrag
 import { useCursors } from '@/composables/useCursors'
 import { useAuth } from '@/composables/useAuth'
 import { useApi } from '@/composables/useApi'
-import { createNode } from '@/types/node'
+import { createNode, getRootNodes } from '@/types/node'
 import { componentRegistry } from '@/data/componentRegistry'
 import type { Node } from '@/types/node'
 import { useClipboard } from '@/composables/useClipboard'
@@ -36,6 +36,9 @@ const selectedNodes = computed(() =>
 const selectedNode = computed(() =>
   selectedNodeIds.value.size === 1 ? selectedNodes.value[0] ?? null : null
 )
+
+// Root nodes (nodes with no parent) - only these are rendered at top level
+const rootNodes = computed(() => getRootNodes(nodes.value))
 
 // Marquee selection state
 const isMarqueeActive = ref(false)
@@ -139,6 +142,17 @@ function onContentUpdate(node: Node, value: string) {
 
 function onFieldsUpdate(node: Node, fields: Array<{ id: string; value: string }>) {
   node.fields = fields
+  syncCards()
+}
+
+function onParentUpdate(id: number | string, parentId: number | string | null, relX: number, relY: number) {
+  const node = nodes.value.find((n) => n.id === id)
+  if (!node) return
+  
+  node.parentId = parentId
+  node.x = relX
+  node.y = relY
+  
   syncCards()
 }
 
@@ -415,16 +429,19 @@ onUnmounted(() => {
         />
 
         <CanvasNode
-          v-for="node in nodes"
+          v-for="node in rootNodes"
           :key="node.id"
           class="canvas-node"
           :node="node"
+          :all-nodes="nodes"
           :workspace-ref="workspaceRef"
           :selected="selectedNodeIds.has(node.id)"
+          :selected-node-ids="selectedNodeIds"
           @update:position="onPositionUpdate"
           @update:size="onSizeUpdate"
           @update:content="(v) => onContentUpdate(node, v)"
           @update:fields="(v) => onFieldsUpdate(node, v)"
+          @update:parent="onParentUpdate"
           @select="(e) => onSelectNode(node, e)"
           @delete="onDeleteNode(node.id)"
         />

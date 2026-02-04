@@ -86,3 +86,43 @@ export function createNode(
   }
   return { ...base, ...defaults?.defaultProps, ...overrides } as Node
 }
+
+/**
+ * Node types that can contain children (layout category)
+ */
+export const CONTAINER_TYPES = ['flex-container'] as const
+
+/**
+ * Check if a node type can contain children
+ */
+export function isContainerType(type: string): boolean {
+  return (CONTAINER_TYPES as readonly string[]).includes(type)
+}
+
+/**
+ * Check if a node is a container
+ */
+export function isContainer(node: Node): boolean {
+  return isContainerType(node.type)
+}
+
+/**
+ * Get direct children of a node
+ */
+export function getChildren(nodes: Node[], parentId: number | string): Node[] {
+  return nodes.filter((n) => n.parentId === parentId)
+}
+
+/**
+ * Get root nodes (nodes with no parent)
+ */
+export function getRootNodes(nodes: Node[]): Node[] {
+  return nodes.filter((n) => n.parentId == null)
+}
+
+/**
+ * Get all container nodes from the list
+ */
+export function getContainers(nodes: Node[]): Node[] {
+  return nodes.filter(isContainer)
+}

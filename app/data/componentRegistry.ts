@@ -30,6 +30,8 @@ export interface ComponentTypeMeta {
   previewBg?: string
   /** Цвет рамки превью */
   previewBorder?: string
+  /** Path to SVG icon for preview (relative to /svg/) */
+  previewIcon?: string
   defaultProps?: Record<string, unknown>
 }
 
@@ -85,6 +87,7 @@ const categories: ComponentCategory[] = [
         defaultHeight: 100,
         previewBg: '#dbeafe',
         previewBorder: '#3b82f6',
+        previewIcon: 'circle-regular-full.svg',
         defaultProps: {
           backgroundColor: '#3b82f6',
           borderColor: '#1d4ed8',
@@ -98,6 +101,7 @@ const categories: ComponentCategory[] = [
         defaultHeight: 100,
         previewBg: '#d1fae5',
         previewBorder: '#10b981',
+        previewIcon: 'square-regular-full.svg',
         defaultProps: {
           backgroundColor: '#10b981',
           borderColor: '#047857',
@@ -111,6 +115,7 @@ const categories: ComponentCategory[] = [
         defaultHeight: 100,
         previewBg: '#fef3c7',
         previewBorder: '#f59e0b',
+        previewIcon: 'triangle-regular-full.svg',
         defaultProps: {
           backgroundColor: '#f59e0b',
           borderColor: '#d97706',
@@ -124,6 +129,7 @@ const categories: ComponentCategory[] = [
         defaultHeight: 100,
         previewBg: '#f3e8ff',
         previewBorder: '#8b5cf6',
+        previewIcon: 'rhombus-regular-full.svg',
         defaultProps: {
           backgroundColor: '#8b5cf6',
           borderColor: '#7c3aed',
@@ -137,6 +143,7 @@ const categories: ComponentCategory[] = [
         defaultHeight: 100,
         previewBg: '#fef3c7',
         previewBorder: '#fbbf24',
+        previewIcon: 'star-regular-full.svg',
         defaultProps: {
           backgroundColor: '#fbbf24',
           borderColor: '#f59e0b',

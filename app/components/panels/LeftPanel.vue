@@ -24,10 +24,17 @@
             @mousedown.prevent="onMouseDown($event, t.id)"
           >
             <div
-              class="w-10 h-10 shrink-0 rounded border-2 flex items-center justify-center text-xs font-medium shadow-sm"
-              :style="{ backgroundColor: t.previewBg ?? '#e5e7eb', borderColor: t.previewBorder ?? '#9ca3af' }"
+              class="w-10 h-10 shrink-0 rounded flex items-center justify-center text-xs font-medium shadow-sm"
+              :class="{ 'border-2': !t.previewIcon }"
+              :style="{ backgroundColor: t.previewIcon ? 'transparent' : (t.previewBg ?? '#e5e7eb'), borderColor: t.previewBorder ?? '#9ca3af' }"
             >
-              {{ t.name.slice(0, 2) }}
+              <img
+                v-if="t.previewIcon"
+                :src="`/svg/${t.previewIcon}`"
+                :alt="t.name"
+                class="w-6 h-6"
+              />
+              <span v-else>{{ t.name.slice(0, 2) }}</span>
             </div>
             <span class="text-sm text-gray-800 truncate">{{ t.name }}</span>
           </div>
