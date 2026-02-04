@@ -9,4 +9,7 @@ export interface Connection {
     type: 'straight' | 'orthogonal' | 'curved'
     markerEnd?: 'arrow' | 'none'
     style?: Record<string, string>
+    data?: {
+        waypoints?: Array<{ x: number, y: number }>
+    }
 }

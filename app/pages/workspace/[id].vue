@@ -38,15 +38,49 @@ const hoveredNodeId = ref<string | number | null>(null)
 const drawingConnection = ref<{ sourceId: string | number, sourceHandle: HandlePosition } | null>(null)
 const mousePos = ref<{ x: number, y: number } | null>(null)
 const hoveredNode = computed(() => nodes.value.find(n => n.id === hoveredNodeId.value) || null)
+const selectedConnectionId = ref<string | number | null>(null)
+
+function onSelectConnection(id: string | number) {
+  selectedConnectionId.value = id
+  selectedNodeIds.value.clear() // Deselect nodes when selecting connection
+}
+
+function onUpdateConnection(updatedConn: Connection) {
+  const index = connections.value.findIndex(c => c.id === updatedConn.id)
+  if (index !== -1) {
+    connections.value[index] = updatedConn
+    syncCards()
+  }
+}
+
+
+let hoverTimeout: any = null
 
 function handleNodeHoverStart(id: string | number) {
-  if (isDragging.value) return // Don't show handles while dragging nodes
+  if (isDragging.value) return
+  
+  // Clear any pending clear timer
+  if (hoverTimeout) {
+    clearTimeout(hoverTimeout)
+    hoverTimeout = null
+  }
+  
   hoveredNodeId.value = id
 }
 
 function handleNodeHoverEnd(id: string | number) {
+  // Delay clearing to allow moving to handles
   if (hoveredNodeId.value === id) {
-    hoveredNodeId.value = null
+    hoverTimeout = setTimeout(() => {
+      hoveredNodeId.value = null
+    }, 100)
+  }
+}
+
+function stopHoverClear() {
+  if (hoverTimeout) {
+    clearTimeout(hoverTimeout)
+    hoverTimeout = null
   }
 }
 
@@ -364,6 +398,7 @@ function onWorkspaceMousedown(e: MouseEvent) {
   // Clear selection unless modifier key is held
   if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
     selectedNodeIds.value = new Set()
+    selectedConnectionId.value = null
   }
 
   // Start marquee selection
@@ -538,16 +573,29 @@ function handleKeyDown(e: KeyboardEvent) {
 
   // Delete on Delete or Backspace
   if (e.key === 'Delete' || e.key === 'Backspace') {
+    let changed = false
+    
+    // Delete selected nodes
     if (selectedNodeIds.value.size > 0) {
-      e.preventDefault() // Prevent browser back navigation on Backspace
+      e.preventDefault() 
       nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
       // Remove connections attached to deleted nodes
       connections.value = connections.value.filter(c => 
         !selectedNodeIds.value.has(c.sourceId) && !selectedNodeIds.value.has(c.targetId)
       )
       selectedNodeIds.value = new Set()
-      syncCards()
+      changed = true
     }
+    
+    // Delete selected connection
+    if (selectedConnectionId.value) {
+      e.preventDefault()
+      connections.value = connections.value.filter(c => c.id !== selectedConnectionId.value)
+      selectedConnectionId.value = null
+      changed = true
+    }
+    
+    if (changed) syncCards()
   }
 }
 
@@ -626,6 +674,9 @@ onUnmounted(() => {
           :nodes="nodes"
           :drawing-connection="drawingConnection"
           :mouse-pos="mousePos"
+          :selected-connection-id="selectedConnectionId"
+          @update:connection="onUpdateConnection"
+          @select-connection="onSelectConnection"
         />
 
         <ContextMenu
@@ -657,10 +708,12 @@ onUnmounted(() => {
         />
 
         <ConnectionHandles
-          v-if="hoveredNode && (!isDragging || drawingConnection)"
+          v-if="hoveredNode && !hoveredNode.parentId && (!isDragging || drawingConnection)"
           :node="hoveredNode"
           @connect-start="handleConnectStart"
           @connect-end="handleConnectEnd"
+          @mouseenter="stopHoverClear"
+          @mouseleave="handleNodeHoverEnd(hoveredNodeId!)"
         />
 
         <div
