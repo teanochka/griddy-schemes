@@ -288,7 +288,7 @@ function onParentUpdate(id: number | string, parentId: number | string | null, i
     // Find where to insert based on sibling positions
     // Children order in nodes array determines render order
     let insertPosition = nodes.value.length
-    if (siblings.length > 0 && insertIndex < siblings.length) {
+    if (siblings.length > 0 && insertIndex >= 0 && insertIndex < siblings.length) {
       const targetSibling = siblings[insertIndex]
       insertPosition = nodes.value.findIndex(n => n.id === targetSibling.id)
     } else if (siblings.length > 0) {
@@ -301,6 +301,14 @@ function onParentUpdate(id: number | string, parentId: number | string | null, i
   }
   
   syncCards()
+}
+
+function onChildStyleUpdate(id: number | string, style: Record<string, any>) {
+  const node = nodes.value.find(n => n.id === id)
+  if (node) {
+    node.style = { ...node.style, ...style }
+    syncCards()
+  }
 }
 
 function onSelectNode(node: Node, event?: MouseEvent) {
@@ -699,6 +707,7 @@ onUnmounted(() => {
           @update:content="(v) => onContentUpdate(node, v)"
           @update:fields="(v) => onFieldsUpdate(node, v)"
           @update:parent="onParentUpdate"
+          @update:child-style="onChildStyleUpdate"
           @select="(e) => onSelectNode(node, e)"
           @select-child="onSelectChildNode"
           @reorder-children="onReorderChildren"

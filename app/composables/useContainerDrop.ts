@@ -8,6 +8,7 @@ import { isContainer } from '@/types/node'
 export const hoveredContainerId = ref<number | string | null>(null)
 export const ghostRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
 export const dropIndex = ref<number>(0)
+export const gridDropTarget = ref<{ row: number; col: number } | null>(null)
 
 /**
  * Check if a point is inside a container's bounds
@@ -94,6 +95,7 @@ export function updateContainerHover(
     } else {
         hoveredContainerId.value = null
         ghostRect.value = null
+        gridDropTarget.value = null
     }
 }
 
@@ -104,4 +106,5 @@ export function clearContainerHover() {
     hoveredContainerId.value = null
     ghostRect.value = null
     dropIndex.value = 0
+    gridDropTarget.value = null
 }

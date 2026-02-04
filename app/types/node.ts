@@ -64,10 +64,18 @@ export interface Node {
   /** Padding inside container (px) */
   flexPadding?: number
   /** How to stretch children: none, horizontal, vertical, or both */
+  /** How to stretch children: none, horizontal, vertical, or both */
   flexChildStretch?: 'none' | 'horizontal' | 'vertical' | 'both'
 
+  // Grid Container Properties
+  gridRows?: number
+  gridCols?: number
+  gridGap?: number
+  gridPadding?: number
+  showGrid?: boolean
+
   /** Совместимость со старыми карточками */
-  style?: Record<string, string>
+  style?: Record<string, any>
   [key: string]: unknown
 }
 
@@ -104,7 +112,7 @@ export function createNode(
 /**
  * Node types that can contain children (layout category)
  */
-export const CONTAINER_TYPES = ['flex-container'] as const
+export const CONTAINER_TYPES = ['flex-container', 'grid-container'] as const
 
 /**
  * Check if a node type can contain children

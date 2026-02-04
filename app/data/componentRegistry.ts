@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import BasicCard from '@/components/nodes/BasicCard.vue'
 import FlexContainer from '@/components/nodes/FlexContainer.vue'
+import GridContainer from '@/components/nodes/GridContainer.vue'
 import CircleShape from '~/components/nodes/shapes/CircleShape.vue'
 import DiamondShape from '~/components/nodes/shapes/DiamondShape.vue'
 import SquareShape from '~/components/nodes/shapes/SquareShape.vue'
@@ -65,7 +66,7 @@ const categories: ComponentCategory[] = [
     types: [
       {
         id: 'flex-container',
-        name: 'Контейнер',
+        name: 'Flex Контейнер',
         component: FlexContainer,
         defaultWidth: 250,
         defaultHeight: 200,
@@ -82,6 +83,26 @@ const categories: ComponentCategory[] = [
           alignItems: 'stretch',
           flexPadding: 16,
           flexChildStretch: 'none',
+        },
+      },
+      {
+        id: 'grid-container',
+        name: 'Grid Сетка',
+        component: GridContainer,
+        defaultWidth: 300,
+        defaultHeight: 300,
+        previewBg: '#e0f2fe',
+        previewBorder: '#0ea5e9',
+        defaultProps: {
+          backgroundColor: '#ffffff',
+          borderColor: '#d1d5db',
+          borderWidth: 2,
+          borderRadius: 8,
+          gridRows: 3,
+          gridCols: 3,
+          gridGap: 10,
+          gridPadding: 16,
+          showGrid: true,
         },
       },
     ],
@@ -169,6 +190,7 @@ const categories: ComponentCategory[] = [
         defaultHeight: 80,
         previewBg: '#fee2e2',
         previewBorder: '#ef4444',
+        previewIcon: 'trapezoid-regular-full.svg',
         defaultProps: {
           backgroundColor: '#ef4444',
           borderColor: '#dc2626',

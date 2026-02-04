@@ -26,7 +26,21 @@
     <div class="w-full h-full relative">
       <!-- Container node: use dedicated renderer -->
       <template v-if="isContainerNode">
+        <GridContainerRenderer
+          v-if="node.type === 'grid-container'"
+          ref="gridContainerRenderer"
+          :node="node"
+          :children="childNodes"
+          :selected-node-ids="selectedNodeIds"
+          :is-hovered="isHoveredContainer"
+          @select-child="onSelectChild"
+          @update:content="(v) => $emit('update:content', v)"
+          @update:fields="(v) => $emit('update:fields', v)"
+          @hover-start="(id) => $emit('hover-start', id)"
+          @hover-end="(id) => $emit('hover-end', id)"
+        />
         <FlexContainerRenderer
+          v-else
           ref="containerRenderer"
           :node="node"
           :children="childNodes"
@@ -76,6 +90,7 @@ import { isContainer, getChildren } from '@/types/node'
 import { componentRegistry } from '@/data/componentRegistry'
 import { hoveredContainerId, updateContainerHover, clearContainerHover, dropIndex } from '@/composables/useContainerDrop'
 import FlexContainerRenderer from './FlexContainerRenderer.vue'
+import GridContainerRenderer from './GridContainerRenderer.vue'
 
 const props = defineProps<{
   node: Node
@@ -91,6 +106,7 @@ const emit = defineEmits<{
   'update:content': [value: string]
   'update:fields': [fields: Array<{ id: string; value: string }>]
   'update:parent': [id: number | string, parentId: number | string | null, insertIndex: number]
+  'update:child-style': [id: number | string, style: Record<string, any>]
   'select': [event?: MouseEvent]
   'select-child': [childId: number | string, event: MouseEvent]
   'reorder-children': [containerId: number | string, fromIndex: number, toIndex: number]
@@ -170,9 +186,27 @@ function onDragUp(e: MouseEvent) {
   if (hoveredContainerId.value && !isContainerNode.value) {
     const container = props.allNodes?.find(n => n.id === hoveredContainerId.value)
     if (container) {
-      // Get the drop index from the FlexContainerRenderer
-      const insertIdx = dropIndex.value
-      emit('update:parent', props.node.id, container.id, insertIdx)
+      if (container.type === 'grid-container') {
+        // Grid drop logic
+        if (gridDropTarget.value) {
+           const { row, col } = gridDropTarget.value
+           const style = {
+             gridRowStart: row + 1,
+             gridColumnStart: col + 1,
+             position: 'relative',
+             left: 'auto',
+             top: 'auto'
+           }
+           
+           emit('update:child-style', props.node.id, style)
+           emit('update:parent', props.node.id, container.id, -1)
+        }
+      } else {
+        // Flex drop logic
+        const insertIdx = dropIndex.value
+        emit('update:child-style', props.node.id, { position: 'relative', left: 'auto', top: 'auto', gridRowStart: undefined, gridColumnStart: undefined })
+        emit('update:parent', props.node.id, container.id, insertIdx)
+      }
     }
   }
   
