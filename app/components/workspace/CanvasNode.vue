@@ -20,6 +20,8 @@
     }"
     @mousedown.stop.prevent="onMouseDown"
     @dblclick.stop="handleDoubleClick"
+    @mouseenter="$emit('hover-start', node.id)"
+    @mouseleave="$emit('hover-end', node.id)"
   >
     <div class="w-full h-full relative">
       <!-- Container node: use dedicated renderer -->
@@ -34,6 +36,8 @@
           @reorder-children="onReorderChildren"
           @update:content="(v) => $emit('update:content', v)"
           @update:fields="(v) => $emit('update:fields', v)"
+          @hover-start="(id) => $emit('hover-start', id)"
+          @hover-end="(id) => $emit('hover-end', id)"
         />
       </template>
       
@@ -90,6 +94,8 @@ const emit = defineEmits<{
   'select': [event?: MouseEvent]
   'select-child': [childId: number | string, event: MouseEvent]
   'reorder-children': [containerId: number | string, fromIndex: number, toIndex: number]
+  'hover-start': [id: number | string]
+  'hover-end': [id: number | string]
   'delete': []
 }>()
 

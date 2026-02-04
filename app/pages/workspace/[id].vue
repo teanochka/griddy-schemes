@@ -6,6 +6,8 @@ import LayersPanel from '@/components/panels/LayersPanel.vue'
 import DragImage from '@/components/DragImage.vue'
 import CanvasNode from '@/components/workspace/CanvasNode.vue'
 import ContextMenu from '@/components/panels/ContextMenu.vue'
+import ConnectionLayer from '@/components/workspace/ConnectionLayer.vue'
+import ConnectionHandles from '@/components/workspace/ConnectionHandles.vue'
 import { isDragging, dragType, dragSource, endDrag } from '@/composables/useDrag'
 import { useCursors } from '@/composables/useCursors'
 import { useAuth } from '@/composables/useAuth'
@@ -13,6 +15,7 @@ import { useApi } from '@/composables/useApi'
 import { createNode, getRootNodes } from '@/types/node'
 import { componentRegistry } from '@/data/componentRegistry'
 import type { Node } from '@/types/node'
+import type { Connection, HandlePosition } from '@/types/connection'
 import { useClipboard } from '@/composables/useClipboard'
 
 const router = useRouter()
@@ -27,7 +30,79 @@ const { inviteUser, getProjectContent } = useApi()
 // }
 
 const nodes = ref<Node[]>([])
+const connections = ref<Connection[]>([])
 const workspaceRef = ref<HTMLElement | null>(null)
+
+// Connection state
+const hoveredNodeId = ref<string | number | null>(null)
+const drawingConnection = ref<{ sourceId: string | number, sourceHandle: HandlePosition } | null>(null)
+const mousePos = ref<{ x: number, y: number } | null>(null)
+const hoveredNode = computed(() => nodes.value.find(n => n.id === hoveredNodeId.value) || null)
+
+function handleNodeHoverStart(id: string | number) {
+  if (isDragging.value) return // Don't show handles while dragging nodes
+  hoveredNodeId.value = id
+}
+
+function handleNodeHoverEnd(id: string | number) {
+  if (hoveredNodeId.value === id) {
+    hoveredNodeId.value = null
+  }
+}
+
+function handleConnectStart(handle: HandlePosition, e: MouseEvent) {
+  if (!hoveredNodeId.value || !workspaceRef.value) return
+  
+  const sourceId = hoveredNodeId.value
+  drawingConnection.value = { sourceId, sourceHandle: handle }
+  
+  const rect = workspaceRef.value.getBoundingClientRect()
+  mousePos.value = { 
+    x: e.clientX - rect.left + workspaceRef.value.scrollLeft, 
+    y: e.clientY - rect.top + workspaceRef.value.scrollTop 
+  }
+  
+  window.addEventListener('mousemove', onConnectionDragMove)
+  window.addEventListener('mouseup', onConnectionDragEnd)
+}
+
+function onConnectionDragMove(e: MouseEvent) {
+  if (!workspaceRef.value) return
+  const rect = workspaceRef.value.getBoundingClientRect()
+  mousePos.value = { 
+    x: e.clientX - rect.left + workspaceRef.value.scrollLeft, 
+    y: e.clientY - rect.top + workspaceRef.value.scrollTop 
+  }
+}
+
+function onConnectionDragEnd() {
+  drawingConnection.value = null
+  mousePos.value = null
+  window.removeEventListener('mousemove', onConnectionDragMove)
+  window.removeEventListener('mouseup', onConnectionDragEnd)
+}
+
+function handleConnectEnd(handle: HandlePosition) {
+  if (drawingConnection.value && hoveredNodeId.value) {
+    // If connecting to same node, deciding if we allow specific logic
+    // For now allow self-connection if handles differ
+    
+    const newConn: Connection = {
+      id: Date.now(),
+      sourceId: drawingConnection.value.sourceId,
+      targetId: hoveredNodeId.value,
+      sourceHandle: drawingConnection.value.sourceHandle,
+      targetHandle: handle,
+      type: 'orthogonal',
+      markerEnd: 'arrow'
+    }
+    
+    connections.value.push(newConn)
+    syncCards()
+  }
+  onConnectionDragEnd()
+}
+
 // Multi-selection state using Set for O(1) lookups
 const selectedNodeIds = ref<Set<number | string>>(new Set())
 const selectedNodes = computed(() =>
@@ -57,8 +132,15 @@ const marqueeRect = computed(() => {
 const { copy, paste } = useClipboard()
 
 
-const handleRemoteUpdate = (remoteCards: Node[]) => {
-  nodes.value = remoteCards ?? []
+const handleRemoteUpdate = (data: any) => {
+  if (Array.isArray(data)) {
+    // Legacy support for array of cards
+    nodes.value = data
+  } else if (data && typeof data === 'object') {
+    // New format with cards and connections
+    if (data.cards) nodes.value = data.cards
+    if (data.connections) connections.value = data.connections
+  }
 }
 
 const { cursors, sendCursor, sendData, connect } = useCursors(
@@ -68,7 +150,13 @@ const { cursors, sendCursor, sendData, connect } = useCursors(
 )
 
 function syncCards() {
-  sendData({ type: 'update_cards', cards: nodes.value })
+  sendData({ 
+    type: 'update_cards', 
+    data: {
+      cards: nodes.value,
+      connections: connections.value
+    }
+  })
 }
 
 function handleWorkspaceMouseMove(e: MouseEvent) {
@@ -387,6 +475,18 @@ function onDeleteNode(id: number | string) {
       selectedNodeIds.value = new Set(selectedNodeIds.value)
     }
   }
+
+  // Remove connections attached to deleted nodes
+  // We need to know which IDs were deleted. 
+  // If multiple (selectedNodeIds), they are gone from nodes.value.
+  // We need to filter connections based on existence in nodes.value?
+  // Or just filter out invalid connections?
+  // Safer to filter connections where source/target no longer exist in nodes.value.
+  const nodeIds = new Set(nodes.value.map(n => n.id))
+  connections.value = connections.value.filter(c => 
+    nodeIds.has(c.sourceId) && nodeIds.has(c.targetId)
+  )
+
   syncCards()
 }
 
@@ -414,6 +514,10 @@ function handleKeyDown(e: KeyboardEvent) {
       copy(selectedNodes.value)
       // Delete original nodes
       nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
+      // Remove connections attached to cut nodes
+      connections.value = connections.value.filter(c => 
+        !selectedNodeIds.value.has(c.sourceId) && !selectedNodeIds.value.has(c.targetId)
+      )
       selectedNodeIds.value = new Set()
       syncCards()
     }
@@ -437,6 +541,10 @@ function handleKeyDown(e: KeyboardEvent) {
     if (selectedNodeIds.value.size > 0) {
       e.preventDefault() // Prevent browser back navigation on Backspace
       nodes.value = nodes.value.filter(n => !selectedNodeIds.value.has(n.id))
+      // Remove connections attached to deleted nodes
+      connections.value = connections.value.filter(c => 
+        !selectedNodeIds.value.has(c.sourceId) && !selectedNodeIds.value.has(c.targetId)
+      )
       selectedNodeIds.value = new Set()
       syncCards()
     }
@@ -463,8 +571,13 @@ onMounted(async () => {
   connect()
   try {
     const data = await getProjectContent(projectId)
-    if (data && Array.isArray(data.cards)) {
-      nodes.value = data.cards
+    if (data) {
+      if (Array.isArray(data.cards)) {
+        nodes.value = data.cards
+      }
+      if (Array.isArray(data.connections)) {
+        connections.value = data.connections
+      }
     }
   } catch (e) {
     console.error('Ошибка загрузки проекта', e)
@@ -508,6 +621,13 @@ onUnmounted(() => {
           style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"
         />
 
+        <ConnectionLayer
+          :connections="connections"
+          :nodes="nodes"
+          :drawing-connection="drawingConnection"
+          :mouse-pos="mousePos"
+        />
+
         <ContextMenu
           v-if="selectedNode"
           :node="selectedNode"
@@ -531,7 +651,16 @@ onUnmounted(() => {
           @select="(e) => onSelectNode(node, e)"
           @select-child="onSelectChildNode"
           @reorder-children="onReorderChildren"
+          @hover-start="handleNodeHoverStart"
+          @hover-end="handleNodeHoverEnd"
           @delete="onDeleteNode(node.id)"
+        />
+
+        <ConnectionHandles
+          v-if="hoveredNode && (!isDragging || drawingConnection)"
+          :node="hoveredNode"
+          @connect-start="handleConnectStart"
+          @connect-end="handleConnectEnd"
         />
 
         <div

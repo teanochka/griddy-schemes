@@ -36,6 +36,8 @@
           @dragend="onChildDragEnd"
           @dragover.prevent="onChildDragOver(index, $event)"
           @drop.prevent="onChildDrop(index)"
+          @mouseenter="$emit('hover-start', child.id)"
+          @mouseleave="$emit('hover-end', child.id)"
         >
           <!-- Drop indicator line -->
           <div
@@ -96,6 +98,8 @@ const emit = defineEmits<{
   'update:content': [value: string]
   'update:fields': [fields: Array<{ id: string; value: string }>]
   'reorder-children': [fromIndex: number, toIndex: number]
+  'hover-start': [id: number | string]
+  'hover-end': [id: number | string]
 }>()
 
 const flexAreaEl = ref<HTMLElement | null>(null)
