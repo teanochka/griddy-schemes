@@ -13,7 +13,14 @@
         :title="option.title"
         @mousedown.prevent="$emit('update', option.value)"
       >
-        <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Built-in line icons -->
+        <svg
+          v-if="['align-left', 'align-center', 'align-right'].includes(option.icon)"
+          class="w-4 h-4 mx-auto"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             v-if="option.icon === 'align-left'"
             stroke-linecap="round"
@@ -36,6 +43,22 @@
             d="M4 6h16M10 12h10M4 18h16"
           />
         </svg>
+
+        <!-- External SVG icons (using mask for color inheritance) -->
+        <div
+          v-else
+          class="w-4 h-4 mx-auto bg-current"
+          :style="{
+            maskImage: `url(/svg/${option.icon}.svg)`,
+            maskSize: 'contain',
+            maskPosition: 'center',
+            maskRepeat: 'no-repeat',
+            WebkitMaskImage: `url(/svg/${option.icon}.svg)`,
+            WebkitMaskSize: 'contain',
+            WebkitMaskPosition: 'center',
+            WebkitMaskRepeat: 'no-repeat'
+          }"
+        ></div>
       </button>
     </div>
   </div>

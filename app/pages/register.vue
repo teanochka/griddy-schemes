@@ -4,11 +4,11 @@
       <div
         class="hidden lg:block lg:w-1/2 bg-cover"
         :style="{
-          backgroundImage: 'url(https://source.unsplash.com/Mv9hjnEUHR4/600x800)',
+          backgroundImage: 'url(/pattern.png)',
         }"
       />
       <div class="w-full p-8 lg:w-1/2">
-        <h2 class="text-2xl font-semibold text-gray-700 text-center mb-2">Create an Account!</h2>
+        <h2 class="text-2xl font-semibold text-gray-700 text-center mb-2">Регистрация</h2>
 
         <form @submit.prevent="handleSubmit">
           <div v-if="errors.submit" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
@@ -16,11 +16,11 @@
           </div>
 
           <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Nickname</label>
+            <label class="block text-gray-700 text-sm font-bold mb-2">Никнейм</label>
             <input
               type="text"
               v-model="nickname"
-              placeholder="Your Nickname"
+              placeholder="Никнейм"
               :class="['w-full px-3 py-2 text-sm border rounded focus:outline-none focus:shadow-outline', 
                        errors.nickname ? 'border-red-500' : 'border-gray-300']"
             />
@@ -45,7 +45,7 @@
 
           <div class="flex gap-4 mb-6">
             <div class="flex-1">
-              <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+              <label class="block text-gray-700 text-sm font-bold mb-2">Пароль</label>
               <input
                 type="password"
                 v-model="password"
@@ -58,7 +58,7 @@
               </p>
             </div>
             <div class="flex-1">
-              <label class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+              <label class="block text-gray-700 text-sm font-bold mb-2">Подтвердите пароль</label>
               <input
                 type="password"
                 v-model="confirmPassword"
@@ -78,21 +78,18 @@
               :disabled="loading"
               :class="['w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200']"
             >
-              {{ loading ? 'Registering...' : 'Register Account' }}
+              {{ loading ? 'Регистрация...' : 'Зарегистрироваться' }}
             </button>
           </div>
 
           <hr class="mb-4 border-gray-300" />
 
           <div class="text-center mb-3">
-            <NuxtLink to="/forgot-password" class="text-sm text-gray-600 hover:text-gray-800 hover:underline">
-              Forgot Password?
-            </NuxtLink>
           </div>
 
           <div class="text-center">
             <NuxtLink to="/login" class="text-sm text-gray-600 hover:text-gray-800 hover:underline">
-              Already have an account? <span class="font-semibold">Login!</span>
+              Уже есть аккаунт? <span class="font-semibold">Войти!</span>
             </NuxtLink>
           </div>
         </form>

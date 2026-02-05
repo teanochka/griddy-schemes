@@ -188,19 +188,48 @@ function onDragUp(e: MouseEvent) {
     if (container) {
       if (container.type === 'grid-container') {
         // Grid drop logic
-        if (gridDropTarget.value) {
-           const { row, col } = gridDropTarget.value
-           const style = {
-             gridRowStart: row + 1,
-             gridColumnStart: col + 1,
-             position: 'relative',
-             left: 'auto',
-             top: 'auto'
+           if (gridDropTarget.value) {
+              const { row, col } = gridDropTarget.value
+              
+              // Check if any other child is already at this position
+              const children = getChildren(props.allNodes || [], container.id)
+              const occupant = children.find(c => {
+                if (c.id === props.node.id) return false // Ignore self
+                const cRow = c.style?.gridRowStart ?? 1
+                const cCol = c.style?.gridColumnStart ?? 1
+                // Grid coords are 1-based
+                return cRow === (row + 1) && cCol === (col + 1)
+              })
+
+              if (occupant) {
+                // Swap!
+                // Get our current position (if we are already in this grid)
+                // If we are coming from outside, we can't really "swap" to outside.
+                // So only swap if we are already in the same container.
+                // Or maybe if we are in *any* grid? No, local swap.
+                
+                const isSameContainer = props.node.parentId === container.id
+                
+                if (isSameContainer && props.node.style?.gridRowStart && props.node.style?.gridColumnStart) {
+                   const oldStyle = {
+                     gridRowStart: props.node.style.gridRowStart,
+                     gridColumnStart: props.node.style.gridColumnStart
+                   }
+                   emit('update:child-style', occupant.id, oldStyle)
+                }
+              }
+
+              const style = {
+                gridRowStart: row + 1,
+                gridColumnStart: col + 1,
+                position: 'relative',
+                left: 'auto',
+                top: 'auto'
+              }
+              
+              emit('update:child-style', props.node.id, style)
+              emit('update:parent', props.node.id, container.id, -1)
            }
-           
-           emit('update:child-style', props.node.id, style)
-           emit('update:parent', props.node.id, container.id, -1)
-        }
       } else {
         // Flex drop logic
         const insertIdx = dropIndex.value

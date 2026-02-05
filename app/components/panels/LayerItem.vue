@@ -23,7 +23,18 @@
         class="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 shrink-0"
         @click.stop="$emit('toggle-expand', node.id)"
       >
-        <span class="text-xs">{{ isExpanded ? '▼' : '▶' }}</span>
+        <svg
+          version="1.0"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 512.000000 512.000000"
+          preserveAspectRatio="xMidYMid meet"
+          class="w-3 h-3 transition-transform duration-200"
+          :class="{ '-rotate-90': !isExpanded }"
+        >
+          <g transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none">
+            <path d="M415 4146 c-69 -30 -111 -124 -85 -190 11 -30 2062 -2877 2109 -2929 36 -40 73 -57 121 -57 48 0 85 17 121 57 60 65 2101 2905 2110 2935 21 72 -19 155 -88 184 -48 20 -4242 20 -4288 0z"/>
+          </g>
+        </svg>
       </button>
       <div v-else class="w-4 shrink-0" />
 

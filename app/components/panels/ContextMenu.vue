@@ -131,7 +131,7 @@
               :checked="hasShadow"
               @change="toggleShadow"
             />
-            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+            <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-400 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
           </label>
         </div>
         
@@ -170,14 +170,50 @@
         </div>
       </PropertySection>
 
+      <!-- Grid Container Settings -->
+      <PropertySection v-if="isGridContainer" title="Сетка (Grid)">
+        <div class="grid grid-cols-2 gap-2">
+          <PropertyInput
+            label="Строки"
+            :value="node.gridRows ?? 3"
+            :min="1"
+            :max="20"
+            @update="(v) => updateProp('gridRows', v)"
+          />
+          <PropertyInput
+            label="Колонки"
+            :value="node.gridCols ?? 3"
+            :min="1"
+            :max="12"
+            @update="(v) => updateProp('gridCols', v)"
+          />
+        </div>
+        <PropertySlider
+          label="Отступ (Gap)"
+          :value="node.gridGap ?? 10"
+          :min="0"
+          :max="50"
+          suffix="px"
+          @update="(v) => updateProp('gridGap', v)"
+        />
+        <PropertySlider
+          label="Внутренний (Padding)"
+          :value="node.gridPadding ?? 16"
+          :min="0"
+          :max="50"
+          suffix="px"
+          @update="(v) => updateProp('gridPadding', v)"
+        />
+      </PropertySection>
+
       <!-- Flex Container Settings -->
-      <PropertySection v-if="isFlexContainer" title="Контейнер">
+      <PropertySection v-if="isFlexContainer" title="Контейнер (Flex)">
         <PropertyButtonGroup
           label="Направление"
           :value="node.flexDirection ?? 'column'"
           :options="[
-            { value: 'column', icon: 'arrow-down', title: 'Вертикально' },
-            { value: 'row', icon: 'arrow-right', title: 'Горизонтально' }
+            { value: 'column', icon: 'arrow-down-long', title: 'Вертикально' },
+            { value: 'row', icon: 'arrow-right-long', title: 'Горизонтально' }
           ]"
           @update="(v) => updateProp('flexDirection', v)"
         />
@@ -201,10 +237,10 @@
           label="Растяжение детей"
           :value="node.flexChildStretch ?? 'none'"
           :options="[
-            { value: 'none', icon: 'minimize', title: 'Без растяжения' },
-            { value: 'horizontal', icon: 'arrows-alt-h', title: 'По горизонтали' },
-            { value: 'vertical', icon: 'arrows-alt-v', title: 'По вертикали' },
-            { value: 'both', icon: 'expand', title: 'Оба направления' }
+            { value: 'none', icon: 'no-stopping', title: 'Без растяжения' },
+            { value: 'horizontal', icon: 'double-arrow-horizontal-symbol', title: 'По горизонтали' },
+            { value: 'vertical', icon: 'double-arrow-vertical-symbol', title: 'По вертикали' },
+            { value: 'both', icon: 'four-way-arrows', title: 'Оба направления' }
           ]"
           @update="(v) => updateProp('flexChildStretch', v)"
         />
@@ -245,8 +281,12 @@ const hasShadow = computed(() => {
   )
 })
 
+const isGridContainer = computed(() => {
+  return props.node?.type === 'grid-container'
+})
+
 const isFlexContainer = computed(() => {
-  return props.node ? isContainer(props.node) : false
+  return props.node ? isContainer(props.node) && props.node.type !== 'grid-container' : false
 })
 
 function updateProp(key: string, value: any) {

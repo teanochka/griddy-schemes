@@ -1,7 +1,7 @@
 <template>
   <div
     class="w-full h-full rounded-lg border overflow-hidden relative group"
-    :class="{ 'ring-2 ring-blue-400': isHovered }"
+    :class="{ 'ring-2 ring-blue-400': isHovered || isNativeDragHover }"
     :style="containerStyle"
   >
     <!-- Grid Lines (Background) -->
@@ -22,6 +22,9 @@
       ref="gridAreaEl"
       class="w-full h-full grid relative z-10"
       :style="gridContainerStyle"
+      @dragover.prevent="onDragOver"
+      @dragleave.prevent="onDragLeave"
+      @drop.prevent="onDrop($event)"
     >
       <!-- Ghost Highlight -->
       <div
@@ -47,6 +50,8 @@
           @click.stop="$emit('select-child', child.id, $event)"
           @mousedown.stop
           @dragstart="onChildDragStart(child, $event)"
+          @dragover.prevent
+          @drop.prevent="onDrop($event, child)"
           @dragend="onChildDragEnd"
           @mouseenter="$emit('hover-start', child.id)"
           @mouseleave="$emit('hover-end', child.id)"
@@ -157,8 +162,69 @@ function onChildDragEnd() {
   ghostCell.value = null
 }
 
+const isNativeDragHover = ref(false)
+
+// Native DnD handlers
+function onDragOver(e: DragEvent) {
+  isNativeDragHover.value = true
+  updateGhostCell(e)
+}
+
+function onDragLeave() {
+  isNativeDragHover.value = false
+  ghostCell.value = null
+  gridDropTarget.value = null
+}
+
+function onDrop(e: DragEvent, targetNode?: Node) {
+  const draggedId = e.dataTransfer?.getData('text/plain')
+  if (!draggedId) return
+
+  // Verify we have a drop target
+  if (!ghostCell.value) return
+
+  // Emitting update to parent
+  const { row, col } = ghostCell.value
+  
+  // Check for swap
+  // We can do swap logic here or let parent handle it?
+  // Since we have all children here, we can check collision
+  const occupant = props.children.find(c => {
+     if (String(c.id) === draggedId) return false
+     const cRow = c.style?.gridRowStart ?? 1
+     const cCol = c.style?.gridColumnStart ?? 1
+     return cRow === (row + 1) && cCol === (col + 1)
+  })
+
+  if (occupant) {
+     const draggedNode = props.children.find(c => String(c.id) === draggedId)
+     if (draggedNode && draggedNode.style?.gridRowStart && draggedNode.style?.gridColumnStart) {
+        const oldStyle = {
+           gridRowStart: draggedNode.style.gridRowStart,
+           gridColumnStart: draggedNode.style.gridColumnStart
+        }
+        emit('update:child-style', occupant.id, oldStyle)
+     }
+  }
+
+  const newStyle = {
+     gridRowStart: row + 1,
+     gridColumnStart: col + 1,
+     position: 'relative',
+     left: 'auto',
+     top: 'auto'
+  }
+  
+  emit('update:child-style', draggedId, newStyle)
+  
+  draggedChildId.value = null
+  ghostCell.value = null
+  gridDropTarget.value = null
+  isNativeDragHover.value = false
+}
+
 function updateGhostCell(e: MouseEvent) {
-  if (!gridAreaEl.value || !props.isHovered) {
+  if (!gridAreaEl.value || (!props.isHovered && !isNativeDragHover.value)) {
     ghostCell.value = null
     gridDropTarget.value = null
     return

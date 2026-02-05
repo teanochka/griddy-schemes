@@ -10,7 +10,7 @@
       :min="min"
       :max="max"
       :step="step"
-      class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+      class="w-full h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
       @input="$emit('update', Number(($event.target as HTMLInputElement).value))"
     />
   </div>

@@ -27,11 +27,8 @@ export interface ComponentTypeMeta {
   component: Component
   defaultWidth: number
   defaultHeight: number
-  /** Цвет фона превью (панель, DragImage) */
   previewBg?: string
-  /** Цвет рамки превью */
   previewBorder?: string
-  /** Path to SVG icon for preview (relative to /svg/) */
   previewIcon?: string
   defaultProps?: Record<string, unknown>
 }

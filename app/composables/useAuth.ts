@@ -56,5 +56,25 @@ export const useAuth = () => {
         navigateTo('/login')
     }
 
-    return { token, user, login, register, googleLogin, logout }
+    const fetchUser = async () => {
+        if (!token.value) return null
+        try {
+            const data = await $fetch<any>('/api/users/me')
+            user.value = { id: data.id, nickname: data.nickname, email: data.email }
+            return user.value
+        } catch (e) {
+            console.error("Failed to fetch user:", e)
+            token.value = null
+            user.value = null
+            return null
+        }
+    }
+
+    const initAuth = async () => {
+        if (token.value && !user.value) {
+            await fetchUser()
+        }
+    }
+
+    return { token, user, login, register, googleLogin, logout, fetchUser, initAuth }
 }
